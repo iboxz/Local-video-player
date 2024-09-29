@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Playing a local video</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=no"
+    />
+    <style>
+      html,
+      body {
+        background: black;
+        color: white;
+        font-family: Arial, sans-serif;
+      }
+      html,
+      body,
+      video {
+        padding: 0;
+        margin: 0;
+      }
+      video {
+        width: 100%;
+      }
+      .subtitle {
+        position: absolute;
+        bottom: 50px;
+        width: 100%;
+        text-align: center;
+        font-size: 24px;
+        color: white;
+      }
+      section {
+        padding: 20px;
+      }
+      input[type="file"],
+      select,
+      input[type="color"],
+      input[type="checkbox"],
+      input[type="range"] {
+        display: block;
+        margin: 10px 0;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        background: #333;
+        color: white;
+      }
+      input[type="color"] {
+        height: 50px;
+      }
+      label {
+        margin: 10px 0;
+        display: block;
+      }
+      input[type="file"]:hover,
+      select:hover,
+      input[type="color"]:hover,
+      input[type="checkbox"]:hover,
+      input[type="range"]:hover {
+        background: #555;
+      }
+      input[type="checkbox"] {
+        width: auto;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <video controls id="videoPlayer">
+        <source src="" type="video/mp4" />
+      </video>
+      <input type="file" id="videoFile" accept="video/*" />
+      <input type="file" id="subtitleFile" accept=".vtt,.srt" />
+      <br />
+      <label for="fontSelect">Font:</label>
+      <select id="fontSelect"></select>
+      <label for="colorPicker">Color:</label>
+      <input type="color" id="colorPicker" value="#FFFFFF" />
+      <label for="bgColorPicker">Background Color:</label>
+      <input type="color" id="bgColorPicker" value="#000000" />
+      <label for="transparencySlider">Background Transparency:</label>
+      <input
+        type="range"
+        id="transparencySlider"
+        min="0"
+        max="100"
+        value="100"
+      />
+      <label for="fontSizeSlider">Font Size:</label>
+      <input type="range" id="fontSizeSlider" min="10" max="80" value="24" />
+    </section>
+    <script>
+      const video = document.getElementById("videoPlayer");
+      const socket = new WebSocket("ws://localhost:8080");
+
+      socket.onopen = function () {
+        console.log("Connected to WebSocket server");
+        // Send video duration to mobile page
+      };
+
+      socket.onmessage = async function (event) {
+        let message;
+        if (event.data instanceof Blob) {
+          message = await event.data.text(); // Convert Blob to string
+        } else {
+          message = event.data;
+        }
+        console.log("Message received:", message);
+        if (message === "pause") {
+          video.pause();
+        } else if (message === "play") {
+          video.play();
+        } else if (message === "seekBackward") {
+          video.currentTime = Math.max(0, video.currentTime - 5);
+        } else if (message === "seekForward") {
+          video.currentTime = Math.min(video.duration, video.currentTime + 5);
+        } else if (message === "volumeUp") {
+          video.volume = Math.min(1, video.volume + 0.1);
+        } else if (message === "volumeDown") {
+          video.volume = Math.max(0, video.volume - 0.1);
+        } else if (message.startsWith("setVolume:")) {
+          const volumeValue = parseFloat(message.split(":")[1]);
+          video.volume = volumeValue;
+          console.log("Volume adjusted to:", volumeValue);
+        } else if (message.startsWith("setCurrentTime:")) {
+          const currentTime = parseFloat(message.split(":")[1]);
+          video.currentTime = currentTime;
+          console.log("Current time adjusted to:", currentTime);
+        }
+      };
+
+      socket.onclose = function () {
+        console.log("Disconnected from WebSocket server");
+      };
+
+      // Send current video time to mobile page every second
+      setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(`currentTime:${video.currentTime}`);
+          socket.send(`duration:${video.duration}`);
+        }
+      }, 1000);
+
+      function parse_timestamp(s) {
+        var match = s.match(/^(?:(\d{2,}):)?([0-5]\d):([0-5]\d[.,]\d{0,3})/);
+        if (match == null) {
+          throw "Invalid timestamp format: " + s;
+        }
+        var hours = parseInt(match[1] || "0", 10);
+        var minutes = parseInt(match[2], 10);
+        var seconds = parseFloat(match[3].replace(",", "."));
+        return seconds + 60 * minutes + 60 * 60 * hours;
+      }
+
+      function quick_and_dirty_vtt_or_srt_parser(vtt) {
+        var lines = vtt
+          .trim()
+          .replace("\r\n", "\n")
+          .split(/\r?\n/)
+          .map(function (line) {
+            return line.trim();
+          });
+        var cues = [];
+        var start = null;
+        var end = null;
+        var payload = null;
+        for (var i = 0; i < lines.length; i++) {
+          if (lines[i].indexOf("-->") >= 0) {
+            var splitted = lines[i].split(/[\t ]+-->[\t ]+/);
+            if (splitted.length != 2) {
+              throw 'Error when splitting "-->": ' + lines[i];
+            }
+            start = parse_timestamp(splitted[0]);
+            end = parse_timestamp(splitted[1]);
+          } else if (lines[i] == "") {
+            if (start && end) {
+              var cue = new VTTCue(start, end, payload);
+              cues.push(cue);
+              start = null;
+              end = null;
+              payload = null;
+            }
+          } else if (start && end) {
+            if (payload == null) {
+              payload = lines[i];
+            } else {
+              payload += "\n" + lines[i];
+            }
+          }
+        }
+        return cues;
+      }
+
+      function init() {
+        var video = document.getElementById("videoPlayer");
+        var videoFileInput = document.getElementById("videoFile");
+        var subtitleFileInput = document.getElementById("subtitleFile");
+        var fontSelect = document.getElementById("fontSelect");
+        var colorPicker = document.getElementById("colorPicker");
+        var bgColorPicker = document.getElementById("bgColorPicker");
+        var transparencySlider = document.getElementById("transparencySlider");
+        var fontSizeSlider = document.getElementById("fontSizeSlider");
+
+        videoFileInput.addEventListener("change", function (event) {
+          var file = event.target.files[0];
+          if (file) {
+            var url = URL.createObjectURL(file);
+            video.src = url;
+            video.load();
+            localStorage.setItem("videoSrc", url);
+          }
+        });
+
+        subtitleFileInput.addEventListener("change", function (event) {
+          var file = event.target.files[0];
+          if (file) {
+            while (video.textTracks.length > 0) {
+              video.removeTextTrack(video.textTracks[0]);
+            }
+            var reader = new FileReader();
+            reader.onload = function (e) {
+              var content = e.target.result;
+              var track = video.addTextTrack("subtitles", "English", "en");
+              track.mode = "showing";
+              quick_and_dirty_vtt_or_srt_parser(content).map(function (cue) {
+                track.addCue(cue);
+              });
+              localStorage.setItem("subtitleContent", content);
+            };
+            reader.readAsText(file);
+          }
+        });
+
+        fontSelect.addEventListener("change", updateSubtitleStyle);
+        colorPicker.addEventListener("change", updateSubtitleStyle);
+        bgColorPicker.addEventListener("change", updateSubtitleStyle);
+        transparencySlider.addEventListener("input", updateSubtitleStyle);
+        fontSizeSlider.addEventListener("input", updateSubtitleStyle);
+
+        function updateSubtitleStyle() {
+          var font = fontSelect.value;
+          var color = colorPicker.value;
+          var bgColor = bgColorPicker.value;
+          var transparency = transparencySlider.value / 100;
+          var fontSize = fontSizeSlider.value + "px";
+          var rgbaBgColor = `rgba(${parseInt(
+            bgColor.slice(1, 3),
+            16
+          )}, ${parseInt(bgColor.slice(3, 5), 16)}, ${parseInt(
+            bgColor.slice(5, 7),
+            16
+          )}, ${transparency})`;
+          var style = document.createElement("style");
+          style.innerHTML = `::cue { font-family: ${font}; color: ${color}; background-color: ${rgbaBgColor}; font-size: ${fontSize}; }`;
+          document.head.appendChild(style);
+
+          // Save settings
+          localStorage.setItem("font", font);
+          localStorage.setItem("color", color);
+          localStorage.setItem("bgColor", bgColor);
+          localStorage.setItem("transparency", transparencySlider.value);
+          localStorage.setItem("fontSize", fontSizeSlider.value);
+        }
+
+        function loadSettings() {
+          var videoSrc = localStorage.getItem("videoSrc");
+          if (videoSrc) {
+            video.src = videoSrc;
+            video.load();
+          }
+          var subtitleContent = localStorage.getItem("subtitleContent");
+          if (subtitleContent) {
+            var track = video.addTextTrack("subtitles", "English", "en");
+            track.mode = "showing";
+            quick_and_dirty_vtt_or_srt_parser(subtitleContent).map(function (
+              cue
+            ) {
+              track.addCue(cue);
+            });
+          }
+          var font = localStorage.getItem("font");
+          if (font) {
+            fontSelect.value = font;
+          }
+          var color = localStorage.getItem("color");
+          if (color) {
+            colorPicker.value = color;
+          }
+          var bgColor = localStorage.getItem("bgColor");
+          if (bgColor) {
+            bgColorPicker.value = bgColor;
+          }
+          var transparency = localStorage.getItem("transparency");
+          if (transparency) {
+            transparencySlider.value = transparency;
+          }
+          var fontSize = localStorage.getItem("fontSize");
+          if (fontSize) {
+            fontSizeSlider.value = fontSize;
+          }
+          updateSubtitleStyle();
+        }
+
+        // Load fonts and then set the selected font
+        const fonts = [
+          "8514oem Regular",
+          "Agency FB Regular",
+          "Aharoni Regular",
+          "Algerian Regular",
+          "Andalus Regular",
+          "AniMe Matrix Regular",
+          "Arabic Typesetting Regular",
+          "Arial Regular",
+          "Arial Rounded MT Bold",
+          "Arian Regular",
+          "Bahman Regular",
+          "Bahnschrift Regular",
+          "Baskerville Old Face Regular",
+          "Bauhaus 93 Regular",
+          "Bell MT Regular",
+          "Berlin Sans FB Regular",
+          "Blackadder ITC Regular",
+          "Bodoni MT Regular",
+          "Book Antiqua Regular",
+          "Bookman Old Style Regular",
+          "Bradley Hand ITC Regular",
+          "Britannic Bold Regular",
+          "Broadway Regular",
+          "Brush Script MT Regular",
+          "Calibri Regular",
+          "Calisto MT Regular",
+          "Cambria Regular",
+          "Candara Regular",
+          "Century Gothic Regular",
+          "Chiller Regular",
+          "Comic Sans MS Regular",
+          "Consolas Regular",
+          "Constantia Regular",
+          "Copperplate Gothic Regular",
+          "Courier New Regular",
+          "Curlz MT Regular",
+          "Dubai Regular",
+          "Ebrima Regular",
+          "Edwardian Script ITC Regular",
+          "Elephant Regular",
+          "Eras ITC Regular",
+          "Felix Titling Regular",
+          "Forte Regular",
+          "Franklin Gothic Regular",
+          "Freestyle Script Regular",
+          "French Script MT Regular",
+          "Gabriola Regular",
+          "Gadugi Regular",
+          "Garamond Regular",
+          "Georgia Regular",
+          "Gill Sans MT Regular",
+          "Gloucester MT Extra Condensed Regular",
+          "Goudy Old Style Regular",
+          "Haettenschweiler Regular",
+          "High Tower Text Regular",
+          "Impact Regular",
+          "Informal Roman Regular",
+          "Jokerman Regular",
+          "Juice ITC Regular",
+          "Kalinga Regular",
+          "Kokila Regular",
+          "Kunstler Script Regular",
+          "Leelawadee Regular",
+          "Lucida Bright Regular",
+          "Lucida Calligraphy Regular",
+          "Lucida Console Regular",
+          "Lucida Fax Regular",
+          "Lucida Handwriting Regular",
+          "Lucida Sans Regular",
+          "Lucida Sans Typewriter Regular",
+          "Magneto Bold",
+          "Maiandra GD Regular",
+          "Malgun Gothic Regular",
+          "Matura MT Script Capitals Regular",
+          "Microsoft Himalaya Regular",
+          "Microsoft JhengHei Regular",
+          "Microsoft PhagsPa Regular",
+          "Microsoft Sans Serif Regular",
+          "Microsoft Uighur Regular",
+          "Mistral Regular",
+          "Modern No. 20 Regular",
+          "Mongolian Baiti Regular",
+          "Monotype Corsiva Italic",
+          "Niagara Solid Regular",
+          "Nirmala UI Regular",
+          "OCR A Extended Regular",
+          "Old English Text MT Regular",
+          "Palace Script MT Italic",
+          "Palatino Linotype Regular",
+          "Papyrus Regular",
+          "Perpetua Regular",
+          "Pinyon Script Regular",
+          "Poor Richard Regular",
+          "Pristina Regular",
+          "Ravie Regular",
+          "Rockwell Regular",
+          "Script MT Bold",
+          "Segoe UI Regular",
+          "Showcard Gothic Regular",
+          "SimSun Regular",
+          "Snap ITC Regular",
+          "Sylfaen Regular",
+          "Tahoma Regular",
+          "Tempus Sans ITC Regular",
+          "Times New Roman Regular",
+          "Trebuchet MS Regular",
+          "Verdana Regular",
+          "Viner Hand ITC Regular",
+          "Vivaldi Italic",
+          "Yu Gothic Regular",
+        ];
+        fonts.forEach((font) => {
+          const option = document.createElement("option");
+          option.value = font;
+          option.textContent = font;
+          fontSelect.appendChild(option);
+        });
+
+        // Load saved settings
+        loadSettings();
+
+        // Add keyboard event listener for seeking and volume control
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "ArrowLeft") {
+            video.currentTime = Math.max(0, video.currentTime - 5);
+          } else if (event.key === "ArrowRight") {
+            video.currentTime = Math.min(video.duration, video.currentTime + 5);
+          } else if (event.key === "ArrowUp") {
+            video.volume = Math.min(1, video.volume + 0.1);
+          } else if (event.key === "ArrowDown") {
+            video.volume = Math.max(0, video.volume - 0.1);
+          }
+        });
+      }
+
+      init();
+    </script>
+  </body>
+</html>
