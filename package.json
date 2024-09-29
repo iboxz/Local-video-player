@@ -1,5 +1,17 @@
 {
   "dependencies": {
+    "http-server": "^14.1.1",
     "ws": "^8.18.0"
-  }
+  },
+  "name": "videoplayer",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "http-server -p 8081"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }
