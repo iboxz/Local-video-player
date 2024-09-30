@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mobile Control</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #000000;
+      }
+      h1 {
+        margin-bottom: 20px;
+        color: #ffffff;
+      }
+      .button-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+      }
+      button {
+        width: 80px;
+        height: 80px;
+        margin: 10px;
+        font-size: 24px;
+        color: white;
+        background-color: #333;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .icon {
+        font-size: 40px;
+        color: white;
+      }
+      .volume-container {
+        display: flex;
+        align-items: center;
+        margin-top: 20px;
+      }
+      .volume-container i {
+        font-size: 20px;
+      }
+      .volume-slider {
+        width: 200px;
+        margin-left: 10px;
+      }
+      .status {
+        margin-top: 20px;
+        color: #ffffff;
+      }
+      .volume-percentage {
+        margin-left: 10px;
+        color: #ffffff;
+      }
+      .time-slider {
+        width: 300px;
+        margin-top: 20px;
+      }
+      .time-display {
+        color: #ffffff;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Mobile Control</h1>
+    <div class="button-container">
+      <button id="playPauseBtn" onclick="togglePlayPause()">
+        <i class="fas fa-play icon" id="playPauseIcon"></i>
+      </button>
+      <button onclick="sendMessage('seekBackward')">
+        <i class="fas fa-backward icon"></i>
+      </button>
+      <button onclick="sendMessage('seekForward')">
+        <i class="fas fa-forward icon"></i>
+      </button>
+    </div>
+    <div class="volume-container">
+      <i class="fas fa-volume-up icon" id="volumeIcon"></i>
+      <input
+        type="range"
+        class="volume-slider"
+        id="volumeSlider"
+        min="0"
+        max="100"
+        value="100"
+        onchange="setVolume(this.value)"
+      />
+      <div id="volumePercentage" class="volume-percentage">100%</div>
+    </div>
+    <input
+      type="range"
+      class="time-slider"
+      id="timeSlider"
+      min="0"
+      max="100"
+      value="0"
+      onchange="setCurrentTime(this.value)"
+    />
+    <div class="time-display">
+      <span id="currentTimeDisplay">0:00:00</span> /
+      <span id="durationDisplay">0:00:00</span>
+    </div>
+    <div class="status" id="status">Connecting...</div>
+    <script>
+      const socket = new WebSocket(`ws://${window.location.hostname}:8080`);
+      let isPlaying = false;
+      let videoDuration = 0;
+
+      function sendMessage(command) {
+        const message = String(command);
+        console.log("Sending command:", message);
+        socket.send(message);
+      }
+
+      function setVolume(value) {
+        const volume = value / 100;
+        console.log("Volume set to:", volume);
+        updateVolumeIcon(volume);
+        document.getElementById("volumePercentage").textContent = `${value}%`;
+        socket.send(`setVolume:${volume}`);
+      }
+
+      function updateVolumeIcon(volume) {
+        const volumeIcon = document.getElementById("volumeIcon");
+
+        volumeIcon.classList.remove(
+          "fa-volume-up",
+          "fa-volume-down",
+          "fa-volume-mute"
+        );
+
+        if (volume === 0) {
+          volumeIcon.classList.add("fa-volume-mute");
+        } else if (volume > 0 && volume <= 0.5) {
+          volumeIcon.classList.add("fa-volume-down");
+        } else {
+          volumeIcon.classList.add("fa-volume-up");
+        }
+      }
+
+      function togglePlayPause() {
+        isPlaying = !isPlaying; 
+        const icon = document.getElementById("playPauseIcon");
+        const message = isPlaying ? "play" : "pause"; 
+        icon.classList.replace("fa-play", isPlaying ? "fa-pause" : "fa-play"); 
+        console.log("Sending command:", message);
+        socket.send(message);
+      }
+
+      function setCurrentTime(value) {
+        const currentTime = (value / 100) * videoDuration;
+        console.log("Current time set to:", currentTime);
+        socket.send(`setCurrentTime:${currentTime}`);
+        updateCurrentTimeDisplay(currentTime);
+      }
+
+      function updateCurrentTimeDisplay(currentTime) {
+        const currentTimeDisplay =
+          document.getElementById("currentTimeDisplay");
+        currentTimeDisplay.textContent = formatTime(currentTime);
+      }
+
+      function formatTime(seconds) {
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${hours}:${minutes < 10 ? "0" : ""}${minutes}:${
+          remainingSeconds < 10 ? "0" : ""
+        }${remainingSeconds}`;
+      }
+
+      socket.onopen = function () {
+        console.log("Connected to WebSocket server");
+        document.getElementById("status").textContent = "Connected";
+      };
+
+      socket.onclose = function () {
+        console.log("Disconnected from WebSocket server");
+        document.getElementById("status").textContent = "Disconnected";
+      };
+
+      socket.onmessage = async function (event) {
+        let message;
+        if (event.data instanceof Blob) {
+          message = await event.data.text(); 
+        } else {
+          message = event.data;
+        }
+        console.log("Message received:", message);
+        if (typeof message === "string") {
+          if (message.startsWith("currentTime:")) {
+            const currentTime = parseFloat(message.split(":")[1]);
+            document.getElementById("timeSlider").value =
+              (currentTime / videoDuration) * 100;
+            updateCurrentTimeDisplay(currentTime);
+          } else if (message.startsWith("duration:")) {
+            videoDuration = parseFloat(message.split(":")[1]);
+            document.getElementById("timeSlider").max = 100;
+            document.getElementById("durationDisplay").textContent =
+              formatTime(videoDuration);
+          }
+        }
+      };
+      socket.onerror = (error) => {
+        console.error(`WebSocket error: ${error}`);
+        document.getElementById("status").textContent = error;
+      };
+    </script>
+  </body>
+</html>

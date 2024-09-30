@@ -98,13 +98,12 @@
 
       socket.onopen = function () {
         console.log("Connected to WebSocket server");
-        // Send video duration to mobile page
       };
 
       socket.onmessage = async function (event) {
         let message;
         if (event.data instanceof Blob) {
-          message = await event.data.text(); // Convert Blob to string
+          message = await event.data.text(); 
         } else {
           message = event.data;
         }
@@ -136,7 +135,6 @@
         console.log("Disconnected from WebSocket server");
       };
 
-      // Send current video time to mobile page every second
       setInterval(() => {
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(`currentTime:${video.currentTime}`);
@@ -257,7 +255,6 @@
           style.innerHTML = `::cue { font-family: ${font}; color: ${color}; background-color: ${rgbaBgColor}; font-size: ${fontSize}; }`;
           document.head.appendChild(style);
 
-          // Save settings
           localStorage.setItem("font", font);
           localStorage.setItem("color", color);
           localStorage.setItem("bgColor", bgColor);
@@ -304,7 +301,6 @@
           updateSubtitleStyle();
         }
 
-        // Load fonts and then set the selected font
         const fonts = [
           "8514oem Regular",
           "Agency FB Regular",
@@ -424,10 +420,8 @@
           fontSelect.appendChild(option);
         });
 
-        // Load saved settings
         loadSettings();
 
-        // Add keyboard event listener for seeking and volume control
         document.addEventListener("keydown", function (event) {
           if (event.key === "ArrowLeft") {
             video.currentTime = Math.max(0, video.currentTime - 5);
