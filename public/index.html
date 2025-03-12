@@ -4,64 +4,10 @@
     <meta charset="utf-8" />
     <title>Playing a local video</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=no" />
+    <link rel="stylesheet" href="style.css" />
     <style>
-      html,
-      body {
-        background: black;
-        color: white;
-        font-family: Arial, sans-serif;
-      }
-      html,
-      body,
-      video {
-        padding: 0;
-        margin: 0;
-      }
-      video {
-        width: 100%;
-      }
-      .subtitle {
-        position: absolute;
-        bottom: 50px;
-        width: 100%;
-        text-align: center;
-        font-size: 24px;
-        color: white;
-      }
-      section {
-        padding: 20px;
-      }
-      input[type="file"],
-      select,
-      input[type="color"],
-      input[type="checkbox"],
-      input[type="range"] {
-        display: block;
-        margin: 10px 0;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        background: #333;
-        color: white;
-      }
-      input[type="color"] {
-        height: 50px;
-      }
-      label {
-        margin: 10px 0;
-        display: block;
-      }
-      input[type="file"]:hover,
-      select:hover,
-      input[type="color"]:hover,
-      input[type="checkbox"]:hover,
-      input[type="range"]:hover {
-        background: #555;
-      }
-      input[type="checkbox"] {
-        width: auto;
-        display: inline-block;
-      }
+      /* Optional styling for the drop zone */
+
     </style>
   </head>
   <body>
@@ -70,12 +16,13 @@
         <source src="" type="video/mp4" />
       </video>
 
-      <p>videoFile</p>
-      <input type="file" id="videoFile" accept="video/*,video/x-matroska" />
-      <p>audioFile</p>
-      <input type="file" id="audioFile" accept="audio/*" />
-      <p>subtitleFile</p>
-      <input type="file" id="subtitleFile" accept=".vtt,.srt" />
+      <!-- Combined input drop zone -->
+      <div id="dropZone">
+        <p>Click to select files or drag and drop them</p>
+      </div>
+      <!-- Hidden file input triggered by click on the drop zone -->
+      <input type="file" id="mediaInput" multiple accept="video/*,audio/*,.vtt,.srt" />
+
       <br />
       <label for="fontSelect">Font:</label>
       <select id="fontSelect"></select>
@@ -88,6 +35,9 @@
       <label for="fontSizeSlider">Font Size:</label>
       <input type="range" id="fontSizeSlider" min="10" max="80" value="24" />
     </section>
+
+    <script src="fonts.js"></script>
+
     <script>
       function parse_timestamp(s) {
         var match = s.match(/^(?:(\d{2,}):)?([0-5]\d):([0-5]\d[.,]\d{0,3})/);
@@ -141,67 +91,99 @@
 
       function init() {
         const video = document.getElementById("videoPlayer");
-        const videoFileInput = document.getElementById("videoFile");
-        const subtitleFileInput = document.getElementById("subtitleFile");
-        const audioFileInput = document.getElementById("audioFile");
         const fontSelect = document.getElementById("fontSelect");
         const colorPicker = document.getElementById("colorPicker");
         const bgColorPicker = document.getElementById("bgColorPicker");
         const transparencySlider = document.getElementById("transparencySlider");
         const fontSizeSlider = document.getElementById("fontSizeSlider");
+        const dropZone = document.getElementById("dropZone");
+        const mediaInput = document.getElementById("mediaInput");
         const audio = new Audio();
+        let currentStyleElement = null;
 
-        videoFileInput.addEventListener("change", function (event) {
-          const file = event.target.files[0];
-          if (file) {
-            const url = URL.createObjectURL(file);
-            video.src = url;
-            video.load();
-            localStorage.setItem("videoSrc", url);
+        // Helper to clear subtitle tracks
+        function clearTextTracks() {
+          for (let i = 0; i < video.textTracks.length; i++) {
+            video.textTracks[i].mode = "disabled";
           }
-        });
+          const trackElements = video.getElementsByTagName("track");
+          while (trackElements.length > 0) {
+            video.removeChild(trackElements[0]);
+          }
+        }
 
-        subtitleFileInput.addEventListener("change", function (event) {
-          const file = event.target.files[0];
-          if (file) {
-            while (video.textTracks.length > 0) {
-              video.removeTextTrack(video.textTracks[0]);
+        // Handler for files selected either via the input or drop
+        function handleFiles(files) {
+          Array.from(files).forEach(function (file) {
+            // Process video files
+            if (file.type.startsWith("video")) {
+              const url = URL.createObjectURL(file);
+              video.src = url;
+              video.load();
+              localStorage.setItem("videoSrc", url);
             }
-            const reader = new FileReader();
-            reader.onload = function (e) {
-              const content = e.target.result;
-              const track = video.addTextTrack("subtitles", "Language", "en");
-              track.mode = "showing";
-              quick_and_dirty_vtt_or_srt_parser(content).map(function (cue) {
-                track.addCue(cue);
-              });
-            };
-            reader.readAsText(file);
-          }
-        });
-
-        audioFileInput.addEventListener("change", function (event) {
-          const file = event.target.files[0];
-          if (file) {
-            const url = URL.createObjectURL(file);
-            audio.src = url;
-            audio.load();
-
-            // ذخیره مسیر فایل صوتی
-            localStorage.setItem("audioSrc", url);
-
-            // بی‌صدا کردن صدای ویدیو
-            video.muted = true;
-
-            // اگر ویدیو در حال پخش است، صوت را نیز پخش کنید
-            if (!video.paused) {
-              audio.currentTime = video.currentTime;
-              audio.play();
+            // Process audio files
+            else if (file.type.startsWith("audio")) {
+              const url = URL.createObjectURL(file);
+              audio.src = url;
+              audio.load();
+              localStorage.setItem("audioSrc", url);
+              video.muted = true;
+              if (!video.paused) {
+                audio.currentTime = video.currentTime;
+                audio.play();
+              }
             }
+            // Process subtitle files (check file extension)
+            else if (file.name.match(/\.(vtt|srt)$/i)) {
+              clearTextTracks();
+              const reader = new FileReader();
+              reader.onload = function (e) {
+                const content = e.target.result;
+                const track = video.addTextTrack("subtitles", "Language", "en");
+                track.mode = "showing";
+                quick_and_dirty_vtt_or_srt_parser(content).forEach(function (cue) {
+                  track.addCue(cue);
+                });
+                updateSubtitleStyle();
+              };
+              reader.readAsText(file);
+            }
+          });
+        }
+
+        // Trigger file selector when clicking on drop zone
+        dropZone.addEventListener("click", function () {
+          mediaInput.click();
+        });
+
+        // Event listener for file selection via the file input
+        mediaInput.addEventListener("change", function (event) {
+          if (event.target.files.length > 0) {
+            handleFiles(event.target.files);
           }
         });
 
-        // همگام‌سازی پخش و توقف ویدیو و صوت
+        // Add drag and drop events to the drop zone
+        dropZone.addEventListener("dragover", function (event) {
+          event.preventDefault();
+          dropZone.classList.add("hover");
+        });
+
+        dropZone.addEventListener("dragleave", function (event) {
+          event.preventDefault();
+          dropZone.classList.remove("hover");
+        });
+
+        dropZone.addEventListener("drop", function (event) {
+          event.preventDefault();
+          dropZone.classList.remove("hover");
+          if (event.dataTransfer.files.length > 0) {
+            handleFiles(event.dataTransfer.files);
+          }
+        });
+
+        // Sync audio and video playback
         video.addEventListener("play", function () {
           if (audio.src) {
             audio.currentTime = video.currentTime;
@@ -219,7 +201,6 @@
           }
         });
 
-        // همگام‌سازی زمان ویدیو با صوت
         video.addEventListener("timeupdate", function () {
           if (audio.src && !video.paused) {
             const delta = Math.abs(audio.currentTime - video.currentTime);
@@ -235,16 +216,24 @@
         transparencySlider.addEventListener("input", updateSubtitleStyle);
         fontSizeSlider.addEventListener("input", updateSubtitleStyle);
 
+        // Apply current subtitle styling by injecting a style element
         function updateSubtitleStyle() {
           const font = fontSelect.value;
           const color = colorPicker.value;
           const bgColor = bgColorPicker.value;
           const transparency = transparencySlider.value / 100;
           const fontSize = fontSizeSlider.value + "px";
-          const rgbaBgColor = `rgba(${parseInt(bgColor.slice(1, 3), 16)}, ${parseInt(bgColor.slice(3, 5), 16)}, ${parseInt(bgColor.slice(5, 7), 16)}, ${transparency})`;
+          const rgbaBgColor = `rgba(${parseInt(bgColor.slice(1, 3), 16)}, ${parseInt(bgColor.slice(3, 5), 16)}, ${parseInt(
+            bgColor.slice(5, 7),
+            16
+          )}, ${transparency})`;
+          if (currentStyleElement) {
+            document.head.removeChild(currentStyleElement);
+          }
           const style = document.createElement("style");
           style.innerHTML = `::cue { font-family: ${font}; color: ${color}; background-color: ${rgbaBgColor}; font-size: ${fontSize}; }`;
           document.head.appendChild(style);
+          currentStyleElement = style;
           localStorage.setItem("font", font);
           localStorage.setItem("color", color);
           localStorage.setItem("bgColor", bgColor);
@@ -252,20 +241,19 @@
           localStorage.setItem("fontSize", fontSizeSlider.value);
         }
 
+        // Load saved settings and sources from localStorage
         function loadSettings() {
           const videoSrc = localStorage.getItem("videoSrc");
           if (videoSrc) {
             video.src = videoSrc;
             video.load();
           }
-
           const audioSrc = localStorage.getItem("audioSrc");
           if (audioSrc) {
             audio.src = audioSrc;
             audio.load();
             video.muted = true;
           }
-
           const font = localStorage.getItem("font");
           if (font) {
             fontSelect.value = font;
@@ -289,128 +277,10 @@
           updateSubtitleStyle();
         }
 
-        const fonts = [
-          "8514oem Regular",
-          "Agency FB Regular",
-          "Aharoni Regular",
-          "Algerian Regular",
-          "Andalus Regular",
-          "AniMe Matrix Regular",
-          "Arabic Typesetting Regular",
-          "Arial Regular",
-          "Arial Rounded MT Bold",
-          "Arian Regular",
-          "Bahman Regular",
-          "Bahnschrift Regular",
-          "Baskerville Old Face Regular",
-          "Bauhaus 93 Regular",
-          "Bell MT Regular",
-          "Berlin Sans FB Regular",
-          "Blackadder ITC Regular",
-          "Bodoni MT Regular",
-          "Book Antiqua Regular",
-          "Bookman Old Style Regular",
-          "Bradley Hand ITC Regular",
-          "Britannic Bold Regular",
-          "Broadway Regular",
-          "Brush Script MT Regular",
-          "Calibri Regular",
-          "Calisto MT Regular",
-          "Cambria Regular",
-          "Candara Regular",
-          "Century Gothic Regular",
-          "Chiller Regular",
-          "Comic Sans MS Regular",
-          "Consolas Regular",
-          "Constantia Regular",
-          "Copperplate Gothic Regular",
-          "Courier New Regular",
-          "Curlz MT Regular",
-          "Dubai Regular",
-          "Ebrima Regular",
-          "Edwardian Script ITC Regular",
-          "Elephant Regular",
-          "Eras ITC Regular",
-          "Felix Titling Regular",
-          "Forte Regular",
-          "Franklin Gothic Regular",
-          "Freestyle Script Regular",
-          "French Script MT Regular",
-          "Gabriola Regular",
-          "Gadugi Regular",
-          "Garamond Regular",
-          "Georgia Regular",
-          "Gill Sans MT Regular",
-          "Gloucester MT Extra Condensed Regular",
-          "Goudy Old Style Regular",
-          "Haettenschweiler Regular",
-          "High Tower Text Regular",
-          "Impact Regular",
-          "Informal Roman Regular",
-          "Jokerman Regular",
-          "Juice ITC Regular",
-          "Kalinga Regular",
-          "Kokila Regular",
-          "Kunstler Script Regular",
-          "Leelawadee Regular",
-          "Lucida Bright Regular",
-          "Lucida Calligraphy Regular",
-          "Lucida Console Regular",
-          "Lucida Fax Regular",
-          "Lucida Handwriting Regular",
-          "Lucida Sans Regular",
-          "Lucida Sans Typewriter Regular",
-          "Magneto Bold",
-          "Maiandra GD Regular",
-          "Malgun Gothic Regular",
-          "Matura MT Script Capitals Regular",
-          "Microsoft Himalaya Regular",
-          "Microsoft JhengHei Regular",
-          "Microsoft PhagsPa Regular",
-          "Microsoft Sans Serif Regular",
-          "Microsoft Uighur Regular",
-          "Mistral Regular",
-          "Modern No. 20 Regular",
-          "Mongolian Baiti Regular",
-          "Monotype Corsiva Italic",
-          "Niagara Solid Regular",
-          "Nirmala UI Regular",
-          "OCR A Extended Regular",
-          "Old English Text MT Regular",
-          "Palace Script MT Italic",
-          "Palatino Linotype Regular",
-          "Papyrus Regular",
-          "Perpetua Regular",
-          "Pinyon Script Regular",
-          "Poor Richard Regular",
-          "Pristina Regular",
-          "Ravie Regular",
-          "Rockwell Regular",
-          "Script MT Bold",
-          "Segoe UI Regular",
-          "Showcard Gothic Regular",
-          "SimSun Regular",
-          "Snap ITC Regular",
-          "Sylfaen Regular",
-          "Tahoma Regular",
-          "Tempus Sans ITC Regular",
-          "Times New Roman Regular",
-          "Trebuchet MS Regular",
-          "Verdana Regular",
-          "Viner Hand ITC Regular",
-          "Vivaldi Italic",
-          "Yu Gothic Regular",
-        ];
+        // Populate the font selection using the external function from fonts.js
+        populateFontSelect(fontSelect);
 
-        fonts.forEach((font) => {
-          const option = document.createElement("option");
-          option.value = font;
-          option.textContent = font;
-          fontSelect.appendChild(option);
-        });
-
-        loadSettings();
-
+        // Keyboard shortcuts for video controls
         document.addEventListener("keydown", function (event) {
           if (event.key === "ArrowLeft") {
             video.currentTime = Math.max(0, video.currentTime - 5);
@@ -422,6 +292,8 @@
             video.volume = Math.max(0, video.volume - 0.1);
           }
         });
+
+        loadSettings();
       }
 
       init();
