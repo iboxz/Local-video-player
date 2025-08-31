@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RTX Video Player</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">RTX Video Player</div>
+        <nav class="nav">
+          <button class="nav-item active" data-page="nowPlaying">Now Playing</button>
+          <button class="nav-item" data-page="settings">Settings</button>
+        </nav>
+      </aside>
+
+      <section class="content">
+        <header class="command-bar">
+          <div class="cmd-left">
+            <button id="importVideoBtn" class="btn primary">Import Video</button>
+            <button id="importSubtitleBtn" class="btn">Import Subtitle</button>
+            <button class="subtitle-toggle" id="subtitleToggle">
+              <span id="subtitleLabel">No subtitle</span>
+              <svg width="16" height="16" viewBox="0 0 16 16">
+                <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <div id="subtitleList" class="subtitle-container"></div>
+            </button>
+          </div>
+          <div class="cmd-right">
+            <label class="toggle">
+              <input id="loopToggle" type="checkbox" />
+              <span>Loop</span>
+            </label>
+            <label class="toggle">
+              <input id="mutedToggle" type="checkbox" />
+              <span>Mute</span>
+            </label>
+            <label class="select">
+              <span>Speed</span>
+              <select id="speedSelect">
+                <option value="0.5">0.5x</option>
+                <option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2x</option>
+              </select>
+            </label>
+          </div>
+        </header>
+
+        <div class="pages">
+          <section class="page" id="page-nowPlaying">
+            <div class="now-grid">
+              <div class="player-panel">
+                <video id="video" controls playsinline crossorigin="use-credentials"></video>
+                <div class="status" id="status">Ready</div>
+                <div id="dropOverlay" class="drop-overlay hidden">
+                  <div class="drop-content">
+                    <div class="drop-title">Drop videos here</div>
+                    <div class="drop-sub">Supported: .mp4, .webm, .mkv, .mov, .avi, .m4v</div>
+                  </div>
+                </div>
+              </div>
+              <aside class="playlist-panel">
+                <div class="panel-title">Playlist</div>
+                <div id="playlistList" class="playlist"></div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="page hidden" id="page-settings">
+            <div class="settings-grid">
+              <section class="section">
+                <h2 class="section-title">Subtitle Appearance</h2>
+                <div class="form-grid">
+                  <div class="row-label">Font Family</div>
+                  <div class="control">
+                    <select id="subtitleFontFamily" class="ctrl full">
+                      <option value="Arial">Arial</option>
+                      <option value="Helvetica">Helvetica</option>
+                      <option value="Verdana">Verdana</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Courier New">Courier New</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Tahoma">Tahoma</option>
+                    </select>
+                  </div>
+
+                  <div class="row-label">Font Weight</div>
+                  <div class="control">
+                    <select id="subtitleFontWeight" class="ctrl">
+                      <option value="100">Thin</option>
+                      <option value="200">Extra Light</option>
+                      <option value="300">Light</option>
+                      <option value="400">Regular</option>
+                      <option value="500">Medium</option>
+                      <option value="600">Semi Bold</option>
+                      <option value="700">Bold</option>
+                      <option value="800">Extra Bold</option>
+                      <option value="900">Black</option>
+                    </select>
+                  </div>
+
+                  <div class="row-label">Font Size</div>
+                  <div class="control">
+                    <input type="range" id="subtitleFontSize" class="ctrl" min="12" max="96" step="2" value="24" />
+                    <span id="subtitleFontSizeValue">24px</span>
+                  </div>
+
+                  <div class="row-label">Font Color</div>
+                  <div class="control">
+                    <input type="color" id="subtitleColor" class="ctrl color" value="#ffffff" />
+                  </div>
+
+                  <div class="row-label">Background Color</div>
+                  <div class="control">
+                    <input type="color" id="subtitleBgColor" class="ctrl color" value="#000000" />
+                    <label class="toggle">
+                      <input type="checkbox" id="subtitleBgEnabled" />
+                      <span>Enable</span>
+                    </label>
+                    <input type="range" id="subtitleBgOpacity" class="ctrl" min="0" max="100" step="1" value="50" />
+                    <span id="subtitleBgOpacityValue">50%</span>
+                  </div>
+
+                  <div class="row-label">Text Stroke</div>
+                  <div class="control">
+                    <input type="range" id="subtitleStrokeWidth" class="ctrl" min="0" max="4" step="0.5" value="1" />
+                    <span id="subtitleStrokeWidthValue">1px</span>
+                    <input type="color" id="subtitleStrokeColor" class="ctrl color" value="#000000" />
+                  </div>
+
+                  <div class="row-label">Preview</div>
+                  <div class="subtitle-preview" id="subtitlePreview">Sample subtitle text</div>
+                </div>
+              </section>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

@@ -1,17 +1,41 @@
 {
-  "dependencies": {
-    "http-server": "^14.1.1",
-    "ws": "^8.18.0"
-  },
-  "name": "videoplayer",
-  "version": "2.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "serve": "http-server -p 8081"
-  },
-  "keywords": [],
+  "name": "rtx-video-player",
+  "version": "1.0.0",
+  "description": "Windows video player using Chromium; enables potential RTX Video Enhancements via NVIDIA driver when available",
+  "main": "main.js",
   "author": "",
-  "license": "ISC",
-  "description": ""
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder build",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.rtx.videoplayer",
+    "productName": "RTX Video Player",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico",
+      "signingHashAlgorithms": null,
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "font-list": "^1.4.5"
+  }
 }
