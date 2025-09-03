@@ -4,6 +4,44 @@ const statusEl = document.getElementById("status");
 const importVideoBtn = document.getElementById("importVideoBtn");
 const importSubtitleBtn = document.getElementById("importSubtitleBtn");
 
+// Window control buttons
+document.getElementById("minimize-btn").addEventListener("click", () => {
+  window.electronAPI.windowControl.minimize();
+});
+
+// برای تشخیص حالت ماکسیمایز
+let isMaximized = false;
+
+// SVG icons for maximize button (state-based)
+const MAX_ICON_RESTORED_SVG = `<svg x="0px" y="0px" viewBox="0 0 10 10">
+<path fill="currentColor" d="M 0 0 L 0 10 L 10 10 L 10 0 L 0 0 z M 1 1 L 9 1 L 9 9 L 1 9 L 1 1 z "/>
+</svg>`;
+
+const MAX_ICON_MAXIMIZED_SVG = `<svg x="0px" y="0px" viewBox="0 0 10 10">
+<mask id="Mask">
+<rect fill="#FFFFFF" width="10" height="10"></rect>
+<path fill="#000000" d="M 3 1 L 9 1 L 9 7 L 8 7 L 8 2 L 3 2 L 3 1 z"/>
+<path fill="#000000" d="M 1 3 L 7 3 L 7 9 L 1 9 L 1 3 z"/>
+</mask>
+<path fill="currentColor" d="M 2 0 L 10 0 L 10 8 L 8 8 L 8 10 L 0 10 L 0 2 L 2 2 L 2 0 z" mask="url(#Mask)"/>
+</svg>`;
+
+function updateMaximizeIcon() {
+  const btn = document.getElementById("maximize-btn");
+  if (!btn) return;
+  btn.innerHTML = isMaximized ? MAX_ICON_MAXIMIZED_SVG : MAX_ICON_RESTORED_SVG;
+}
+
+document.getElementById("maximize-btn").addEventListener("click", () => {
+  isMaximized = !isMaximized;
+  window.electronAPI.windowControl.maximize();
+  updateMaximizeIcon();
+});
+
+document.getElementById("close-btn").addEventListener("click", () => {
+  window.electronAPI.windowControl.close();
+});
+
 // Save video time periodically and before closing
 let saveTimeDebounce = null;
 video.addEventListener("timeupdate", () => {
@@ -845,4 +883,5 @@ function updateSubtitleStyle() {
   }
   loadSystemFonts();
   loadState();
+  updateMaximizeIcon();
 })();

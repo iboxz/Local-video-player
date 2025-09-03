@@ -23,10 +23,77 @@ body {
   color: var(--text);
 }
 
+.custom-titlebar {
+  height: 32px;
+  background: var(--surface);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.titlebar-drag-region {
+  flex: 1;
+  height: 100%;
+}
+.titlebar-drag-region .brand {
+  font-weight: 700;
+  font-size: 18px;
+  padding: 8px 16px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.titlebar-buttons {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-controls {
+  height: 100%;
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-button {
+  width: 45px;
+  height: 31px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 1px 1px 0 0;
+  transition: background-color 0.2s;
+}
+
+.titlebar-button svg {
+  width: 10px;
+  height: 10px;
+  shape-rendering: crispEdges;
+}
+
+.titlebar-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+#close-btn:hover {
+  background: rgba(232, 17, 35, 0.9);
+}
+
+#close-btn:hover svg {
+  color: #ffffff;
+}
+
+
 .app {
   display: grid;
   grid-template-columns: 260px 1fr;
-  height: 100vh;
+  height: calc(100vh - 32px);
 }
 .sidebar {
   background: var(--surface);
@@ -35,12 +102,6 @@ body {
   flex-direction: column;
   padding: 16px;
   gap: 12px;
-}
-.brand {
-  font-weight: 700;
-  font-size: 18px;
-  color: var(--text);
-  margin-bottom: 8px;
 }
 .nav {
   display: flex;

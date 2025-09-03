@@ -9,7 +9,6 @@ A feature-rich local video player built with Electron, designed to enhance your 
 - **NVIDIA Video Enhancement**: Supports NVIDIA Video Enhancement for better video quality
 - **Recent Videos Playlist**: Maintains a list of recently watched videos for quick access
 
-
 ## Installation 💿
 
 1. Download the latest release from the releases page

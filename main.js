@@ -18,6 +18,7 @@ function createWindow() {
     width: winWidth,
     height: winHeight,
     backgroundColor: "#111",
+    frame: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -36,6 +37,25 @@ function createWindow() {
 
   win.removeMenu();
   win.loadFile("renderer/index.html");
+
+  // Window control handlers
+  ipcMain.on("window-control", (_, command) => {
+    switch (command) {
+      case "minimize":
+        win.minimize();
+        break;
+      case "maximize":
+        if (win.isMaximized()) {
+          win.unmaximize();
+        } else {
+          win.maximize();
+        }
+        break;
+      case "close":
+        win.close();
+        break;
+    }
+  });
 
   // DevTools are disabled in webPreferences
 }
