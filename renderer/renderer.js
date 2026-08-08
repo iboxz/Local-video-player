@@ -65,6 +65,20 @@ window.addEventListener("beforeunload", () => {
     videoTimeStorage.save(video.src, video.currentTime);
   }
 });
+
+// If a raw (un-converted) .mkv fails to play (e.g. video codec Chromium
+// can't demux even though audio looked compatible), fall back to a forced
+// conversion once instead of leaving the user stuck.
+video.addEventListener("error", () => {
+  const original = playlist[currentIndex];
+  if (!original || !original.toLowerCase().endsWith(".mkv")) return;
+  if (video.src && video.src.startsWith(original)) {
+    if (forcedPrepare.has(original)) return;
+    forcedPrepare.add(original);
+    setStatus("Playback failed, converting...");
+    playIndex(currentIndex, true);
+  }
+});
 const loopToggle = document.getElementById("loopToggle");
 const mutedToggle = document.getElementById("mutedToggle");
 const speedSelect = document.getElementById("speedSelect");
@@ -367,18 +381,86 @@ importSubtitleBtn.onclick = async () => {
     setStatus("Error loading subtitle");
   }
 };
-function playIndex(idx) {
+let preparingSet = new Set();
+
+// Register progress handlers once
+if (window.electronAPI && window.electronAPI.onPrepareProgress) {
+  window.electronAPI.onPrepareProgress((data) => {
+    try {
+      if (!data) return;
+      const percent = data.percent != null ? Math.round(data.percent) + "%" : data.timemark || "Preparing...";
+      // Only show progress if current playlist item matches
+      const currentOriginal = playlist[currentIndex];
+      if (currentOriginal && currentOriginal === data.original) {
+        setStatus("Preparing: " + percent);
+      }
+    } catch (_) {}
+  });
+}
+
+if (window.electronAPI && window.electronAPI.onPrepareDone) {
+  window.electronAPI.onPrepareDone((data) => {
+    try {
+      if (!data) return;
+      const currentOriginal = playlist[currentIndex];
+      if (currentOriginal && currentOriginal === data.original) {
+        setStatus("Preparation complete");
+      }
+      // clear preparing flag for original
+      const key = data.original;
+      if (preparingSet.has(key)) preparingSet.delete(key);
+    } catch (_) {}
+  });
+}
+
+if (window.electronAPI && window.electronAPI.onPrepareError) {
+  window.electronAPI.onPrepareError((data) => {
+    try {
+      if (!data) return;
+      const currentOriginal = playlist[currentIndex];
+      if (currentOriginal && currentOriginal === data.original) {
+        setStatus("Preparation failed");
+      }
+      const key = data.original;
+      if (preparingSet.has(key)) preparingSet.delete(key);
+    } catch (_) {}
+  });
+}
+
+const forcedPrepare = new Set(); // originals we already retried with forced transcode
+
+async function playIndex(idx, forcePrepare) {
   if (idx < 0 || idx >= playlist.length) return;
   currentIndex = idx;
-  video.src = playlist[idx];
+
+  const original = playlist[idx];
+
+  // If already preparing, await the existing preparation via IPC (main dedupes)
+  if (!preparingSet.has(original)) {
+    preparingSet.add(original);
+  }
+
+  setStatus("Preparing...");
+
+  let prepared = original;
+  try {
+    prepared = (await window.electronAPI.prepareVideo(original, !!forcePrepare)) || original;
+  } catch (e) {
+    prepared = original;
+  }
+
+  // clear preparing flag
+  if (preparingSet.has(original)) preparingSet.delete(original);
+
+  video.src = prepared;
   video.currentTime = 0;
 
   // Load subtitles for this video
-  currentSubtitles = subtitlesMap.get(video.src) || [];
+  currentSubtitles = subtitlesMap.get(original) || [];
   updateSubtitleSelect();
 
-  // Load saved time for this video
-  const savedTime = videoTimeStorage.load(video.src);
+  // Load saved time for this video (use original key)
+  const savedTime = videoTimeStorage.load(original);
   if (savedTime > 0) {
     video.currentTime = savedTime;
   }

@@ -36,6 +36,9 @@
     "electron-builder": "^24.13.3"
   },
   "dependencies": {
-    "font-list": "^1.4.5"
+    "font-list": "^1.4.5",
+    "ffmpeg-static": "^5.1.0",
+    "ffprobe-static": "^3.1.0",
+    "fluent-ffmpeg": "^2.1.2"
   }
 }
