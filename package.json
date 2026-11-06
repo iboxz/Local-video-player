@@ -1,6 +1,6 @@
 {
   "name": "rtx-video-player",
-  "version": "1.0.0",
+  "version": "1.0.11",
   "description": "Windows video player using Chromium; enables potential RTX Video Enhancements via NVIDIA driver when available",
   "main": "main.js",
   "author": "",
@@ -29,7 +29,45 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
-    }
+    },
+    "fileAssociations": [
+      {
+        "ext": "mp4",
+        "name": "Video file",
+        "description": "Video file",
+        "role": "Viewer"
+      },
+      {
+        "ext": "mkv",
+        "name": "Video file",
+        "description": "Video file",
+        "role": "Viewer"
+      },
+      {
+        "ext": "webm",
+        "name": "Video file",
+        "description": "Video file",
+        "role": "Viewer"
+      },
+      {
+        "ext": "mov",
+        "name": "Video file",
+        "description": "Video file",
+        "role": "Viewer"
+      },
+      {
+        "ext": "avi",
+        "name": "Video file",
+        "description": "Video file",
+        "role": "Viewer"
+      },
+      {
+        "ext": "m4v",
+        "name": "Video file",
+        "description": "Video file",
+        "role": "Viewer"
+      }
+    ]
   },
   "devDependencies": {
     "electron": "^31.3.0",

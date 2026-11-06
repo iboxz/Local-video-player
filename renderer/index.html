@@ -1,163 +1,682 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" data-style="classic" data-fx="lite">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RTX Video Player</title>
+    <script>
+      try {
+        var _s = localStorage.getItem("rtx.uiStyle"), _f = localStorage.getItem("rtx.uiFx");
+        if (_s) { document.documentElement.setAttribute("data-style", _s); if (_s !== "classic") document.documentElement.setAttribute("data-mono", ""); }
+        if (_f) document.documentElement.setAttribute("data-fx", _f);
+      } catch (e) {}
+    </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div class="ambient" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i><i class="a4"></i></div>
     <div class="custom-titlebar">
       <div class="titlebar-drag-region">
-        <div class="brand">RTX Video Player</div>
+        <button class="rail-toggle" id="railToggle" title="Toggle sidebar" aria-label="Toggle sidebar">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 3v10" stroke="currentColor" stroke-width="1.3"/></svg>
+        </button>
+        <div class="brand"><span class="brand-mark">RTX</span><span class="brand-rest">Video Player</span></div>
       </div>
       <div class="titlebar-controls">
-        <button class="titlebar-button" id="minimize-btn">
-          <svg x="0px" y="0px" viewBox="0 0 10 1">
-            <rect fill="currentColor" width="10" height="1"></rect>
-          </svg>
+        <button class="titlebar-button" id="minimize-btn" aria-label="Minimize">
+          <svg x="0px" y="0px" viewBox="0 0 10 1"><rect fill="currentColor" width="10" height="1"></rect></svg>
         </button>
-        <button class="titlebar-button" id="maximize-btn">
-          <svg x="0px" y="0px" viewBox="0 0 10 10">
-            <path fill="currentColor" d="M 0 0 L 0 10 L 10 10 L 10 0 L 0 0 z M 1 1 L 9 1 L 9 9 L 1 9 L 1 1 z "/>
-          </svg>
+        <button class="titlebar-button" id="maximize-btn" aria-label="Maximize">
+          <svg x="0px" y="0px" viewBox="0 0 10 10"><path fill="currentColor" d="M 0 0 L 0 10 L 10 10 L 10 0 L 0 0 z M 1 1 L 9 1 L 9 9 L 1 9 L 1 1 z "/></svg>
         </button>
-        <button class="titlebar-button" id="close-btn">
-          <svg x="0px" y="0px" viewBox="0 0 10 10">
-            <polygon fill="currentColor" points="10,1 9,0 5,4 1,0 0,1 4,5 0,9 1,10 5,6 9,10 10,9 6,5"></polygon>
-          </svg>
+        <button class="titlebar-button close" id="close-btn" aria-label="Close">
+          <svg x="0px" y="0px" viewBox="0 0 10 10"><polygon fill="currentColor" points="10,1 9,0 5,4 1,0 0,1 4,5 0,9 1,10 5,6 9,10 10,9 6,5"></polygon></svg>
         </button>
       </div>
     </div>
-    <div class="app">
-      <aside class="sidebar">
-        <nav class="nav">
-          <button class="nav-item active" data-page="nowPlaying">Now Playing</button>
-          <button class="nav-item" data-page="settings">Settings</button>
+
+    <div class="app" id="app">
+      <aside class="sidebar" id="sidebar">
+        <nav class="nav" id="nav">
+          <span class="nav-glider" id="navGlider" aria-hidden="true"></span>
+          <span class="nav-group">Watch</span>
+          <button class="nav-item active" data-page="nowPlaying" title="Now Playing">
+            <svg class="nav-icon" width="17" height="17" viewBox="0 0 18 18" fill="none"><rect x="1.5" y="3" width="15" height="10.5" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 16.5h6M9 13.5v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M7.3 6.2l3.6 2.1-3.6 2.1V6.2z" fill="currentColor"/></svg>
+            <span class="nav-label">Now Playing</span>
+          </button>
+          <button class="nav-item" data-page="library" title="Library">
+            <svg class="nav-icon" width="17" height="17" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="6" height="6" rx="1.4" stroke="currentColor" stroke-width="1.3"/><rect x="10" y="2" width="6" height="6" rx="1.4" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="10" width="6" height="6" rx="1.4" stroke="currentColor" stroke-width="1.3"/><rect x="10" y="10" width="6" height="6" rx="1.4" stroke="currentColor" stroke-width="1.3"/></svg>
+            <span class="nav-label">Library</span>
+          </button>
+          <button class="nav-item" data-page="recent" title="Recent">
+            <svg class="nav-icon" width="17" height="17" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9.5" r="6.8" stroke="currentColor" stroke-width="1.3"/><path d="M9 5.8V9.5l3 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 2.3L9 4.5l3-2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="nav-label">Recent</span>
+          </button>
+          <span class="nav-group">App</span>
+          <button class="nav-item" data-page="settings" title="Settings">
+            <svg class="nav-icon" width="17" height="17" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.6" stroke="currentColor" stroke-width="1.3"/><path d="M9 2.2v1.9M9 13.9v1.9M15.8 9h-1.9M4.1 9H2.2M13.6 4.4l-1.3 1.3M5.7 12.3l-1.3 1.3M13.6 13.6l-1.3-1.3M5.7 5.7L4.4 4.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            <span class="nav-label">Settings</span>
+          </button>
         </nav>
+        <div class="side-quick" id="sideQuick">
+          <span class="nav-group">Quick access</span>
+          <button class="quick-item" data-q="progress"><span>Continue watching</span><b id="qProgress">0</b></button>
+          <button class="quick-item" data-q="fav"><span>Favorites</span><b id="qFav">0</b></button>
+          <button class="quick-item" data-q="new"><span>Unwatched</span><b id="qNew">0</b></button>
+        </div>
+        <div class="side-now" id="sideNow" role="button" tabindex="0" aria-label="Go to Now Playing">
+          <div class="sn-thumb" id="snThumb"><span class="sn-eq"><i></i><i></i><i></i></span></div>
+          <div class="sn-text"><div class="sn-title" id="snTitle">Nothing playing</div><div class="sn-sub" id="snSub"></div></div>
+          <button class="sn-play" id="snPlay" aria-label="Play or pause">
+            <svg class="sn-ic-play" width="12" height="12" viewBox="0 0 12 12"><path d="M3 1.8l7 4.2-7 4.2z" fill="currentColor"/></svg>
+            <svg class="sn-ic-pause" width="12" height="12" viewBox="0 0 12 12"><rect x="2.4" y="1.8" width="2.6" height="8.4" rx="0.8" fill="currentColor"/><rect x="7" y="1.8" width="2.6" height="8.4" rx="0.8" fill="currentColor"/></svg>
+          </button>
+          <div class="sn-bar"><i id="snBar"></i></div>
+        </div>
       </aside>
 
       <section class="content">
         <header class="command-bar">
           <div class="cmd-left">
-            <button id="importVideoBtn" class="btn primary">Import Video</button>
-            <button id="importSubtitleBtn" class="btn">Import Subtitle</button>
-            <button class="subtitle-toggle" id="subtitleToggle">
-              <span id="subtitleLabel">No subtitle</span>
-              <svg width="16" height="16" viewBox="0 0 16 16">
-                <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
-              <div id="subtitleList" class="subtitle-container"></div>
-            </button>
+            <div class="popover-wrap" id="importWrap">
+              <button id="importVideoBtn" class="btn primary">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2v9M3.5 7l4-4 4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 11.5v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                <span>Import</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="popover import-popover" id="importPopover">
+                <button class="menu-row" id="importFilesBtn"><span style="width:15px"></span><span>Video file(s)</span></button>
+                <button class="menu-row" id="importFolderBtn"><span style="width:15px"></span><span>Folder (with subfolders)</span></button>
+                <button class="menu-row" id="importUrlBtn"><span style="width:15px"></span><span>Stream URL...</span></button>
+              </div>
+            </div>
           </div>
           <div class="cmd-right">
-            <label class="toggle">
-              <input id="loopToggle" type="checkbox" />
-              <span>Loop</span>
-            </label>
-            <label class="toggle">
-              <input id="mutedToggle" type="checkbox" />
-              <span>Mute</span>
-            </label>
-            <label class="select">
-              <span>Speed</span>
-              <select id="speedSelect">
-                <option value="0.5">0.5x</option>
-                <option value="0.75">0.75x</option>
-                <option value="1" selected>1x</option>
-                <option value="1.25">1.25x</option>
-                <option value="1.5">1.5x</option>
-                <option value="2">2x</option>
-              </select>
-            </label>
+            <button class="btn icon-btn" id="shortcutsBtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1.3" stroke="currentColor" stroke-width="1.3"/><path d="M4 6.3h.01M6.5 6.3h.01M9 6.3h.01M11.5 6.3h.01M4 8.7h5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            </button>
+            <button class="btn icon-btn" id="playlistToggle" title="Toggle playlist panel" aria-label="Toggle playlist panel">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="11" rx="1.3" stroke="currentColor" stroke-width="1.3"/><path d="M10 2.5v11" stroke="currentColor" stroke-width="1.3"/></svg>
+            </button>
           </div>
         </header>
 
         <div class="pages">
           <section class="page" id="page-nowPlaying">
-            <div class="now-grid">
-              <div class="player-panel">
-                <video id="video" controls playsinline crossorigin="use-credentials"></video>
-                <div class="status" id="status">Ready</div>
-                <div id="dropOverlay" class="drop-overlay hidden">
-                  <div class="drop-content">
-                    <div class="drop-title">Drop videos here</div>
-                    <div class="drop-sub">Supported: .mp4, .webm, .mkv, .mov, .avi, .m4v</div>
+            <div class="now-grid" id="nowGrid">
+              <div class="player-panel" id="playerPanel">
+                <div class="title-pill" id="titlePill"><span class="tp-dot"></span><span id="titlePillText">Nothing playing</span></div>
+                <div class="rail-pop" id="railPop" hidden>
+                  <div class="speed-head"><span>Playback speed</span><span class="speed-ctl"><button class="speed-step" id="railMinus" aria-label="Slower">−</button><button class="speed-val mono" id="railVal" title="Reset to 1×">1×</button><button class="speed-step" id="railPlus" aria-label="Faster">+</button></span></div>
+                  <div class="speed-chips" id="railChips"></div>
+                </div>
+                <div class="tool-rail" id="toolRail" role="toolbar" aria-label="Quick tools">
+                  <button id="screenshotBtn" title="Screenshot (S)" aria-label="Screenshot"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 5.2c0-.7.5-1.2 1.2-1.2h1.3l.9-1.3h5.2l.9 1.3h1.3c.7 0 1.2.5 1.2 1.2v6.1c0 .7-.5 1.2-1.2 1.2H3.2c-.7 0-1.2-.5-1.2-1.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="8" cy="8.4" r="2.3" stroke="currentColor" stroke-width="1.3"/></svg></button>
+                  <button id="pipBtn" title="Picture in picture (I)" aria-label="Picture in picture"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.8" y="3" width="12.4" height="9.4" rx="1.8" stroke="currentColor" stroke-width="1.3"/><rect x="7.6" y="7.2" width="5" height="3.6" rx="0.9" fill="currentColor"/></svg></button>
+                  <button id="loopBtn" title="Loop (R)" aria-label="Loop"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 7.2V6.4c0-1.1.9-2 2-2h7M10.4 2.2l2 2.2-2 2.2M13 8.8v.8c0 1.1-.9 2-2 2H4M5.6 13.8l-2-2.2 2-2.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                  <button id="enhanceBtn" title="RTX enhancement (E)" aria-label="RTX enhancement"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M9 1.8L3.4 9h4l-.7 5.2L12.6 7h-4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+                  <button id="fxBtn" title="Video effects (X)" aria-label="Video effects"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.4 2l1.1 3.1 3.1 1.1-3.1 1.1L6.4 10.4 5.3 7.3 2.2 6.2l3.1-1.1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 9.6v3.6M10.2 11.4h3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+                  <button class="rail-speed" id="railSpeed" title="Playback speed" aria-label="Playback speed"><span id="railSpeedLabel">1×</span></button>
+                  <button id="theaterBtn" title="Theater mode (T)" aria-label="Theater mode"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3.5" width="13" height="9" rx="1.6" stroke="currentColor" stroke-width="1.3"/><path d="M5 6.2L3.6 7.6 5 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+                <div class="video-stage" id="videoStage">
+                  <video id="video" playsinline crossorigin="use-credentials"></video>
+
+                  <div class="center-play" id="centerPlay">
+                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M10 6.5l14 8.5-14 8.5v-17z" fill="currentColor"/></svg>
+                  </div>
+
+                  <div id="dropOverlay" class="drop-overlay hidden">
+                    <div class="drop-content">
+                      <div class="drop-title">Drop videos here</div>
+                      <div class="drop-sub">Supported: .mp4, .webm, .mkv, .mov, .avi, .m4v</div>
+                    </div>
+                  </div>
+
+                  <div class="empty-state" id="emptyState">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="3" y="7" width="34" height="24" rx="3" stroke="currentColor" stroke-width="1.6"/><path d="M16 15l10 5-10 5V15z" fill="currentColor"/></svg>
+                    <div class="empty-title">Nothing playing</div>
+                    <div class="empty-sub">Import a video or drop one here to start</div>
+                  </div>
+
+                  <div class="prep-overlay hidden" id="prepOverlay">
+                    <div class="spinner"></div>
+                    <div class="prep-text mono" id="prepText">Preparing...</div>
+                  </div>
+
+                </div>
+
+                <div class="player-blob" id="playerBlob">
+                  <div class="blob-seek-row">
+                    <span class="time-current mono" id="timeCurrent">0:00</span>
+                    <div class="seek-track" id="seekTrack" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuenow="0">
+                      <div class="seek-segs" id="seekSegs"></div>
+                      <div class="seek-thumb" id="seekThumb"></div>
+                      <div class="seek-preview" id="seekPreview">
+                        <canvas id="seekPreviewCanvas" width="320" height="180"></canvas>
+                        <div class="seek-preview-chapter" id="seekPreviewChapter"></div>
+                        <div class="seek-preview-time mono" id="seekPreviewTime">0:00</div>
+                      </div>
+                    </div>
+                    <span class="time-duration mono" id="timeDuration">0:00</span>
+                  </div>
+
+                  <div class="blob-transport-row">
+                    <div class="blob-now-playing">
+                      <div class="blob-thumb" id="blobThumb"></div>
+                      <div class="blob-text">
+                        <div class="blob-title" id="blobTitle">Nothing playing</div>
+                        <div class="blob-subtitle" id="blobSubtitle">—</div>
+                      </div>
+                    </div>
+
+                    <div class="blob-transport">
+                      <button class="ctrl-btn" id="prevBtn" title="Previous" aria-label="Previous video">
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="2.3" y="2.5" width="1.6" height="10" fill="currentColor"/><path d="M12.5 2.5v10L4.5 7.5l8-5z" fill="currentColor"/></svg>
+                      </button>
+                      <button class="ctrl-btn" id="seekBackBtn" title="Back 10s (J)" aria-label="Back 10 seconds">
+                        <svg width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M4.5 9.5a5 5 0 115 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.5 5.8v3.7H8.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><text x="9.5" y="12.3" font-size="6" fill="currentColor" text-anchor="middle" font-family="sans-serif">10</text></svg>
+                      </button>
+                      <button class="ctrl-btn play-btn" id="playBtn" title="Play / Pause (Space)" aria-label="Play or pause">
+                        <svg class="icon-play" width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M4 2.5l10 5.5-10 5.5v-11z" fill="currentColor"/></svg>
+                        <svg class="icon-pause" width="18" height="18" viewBox="0 0 16 16" fill="none" style="display:none"><rect x="3.5" y="2.5" width="3" height="11" rx="0.8" fill="currentColor"/><rect x="9.5" y="2.5" width="3" height="11" rx="0.8" fill="currentColor"/></svg>
+                      </button>
+                      <button class="ctrl-btn" id="seekFwdBtn" title="Forward 10s (L)" aria-label="Forward 10 seconds">
+                        <svg width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M14.5 9.5a5 5 0 10-5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M14.5 5.8v3.7h-3.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><text x="9.5" y="12.3" font-size="6" fill="currentColor" text-anchor="middle" font-family="sans-serif">10</text></svg>
+                      </button>
+                      <button class="ctrl-btn" id="nextBtn" title="Next" aria-label="Next video">
+                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="11.1" y="2.5" width="1.6" height="10" fill="currentColor"/><path d="M2.5 2.5v10l8-5-8-5z" fill="currentColor"/></svg>
+                      </button>
+                    </div>
+
+                    <div class="blob-extra">
+                      <div class="volume-group" id="volGroup">
+                        <button class="ctrl-btn" id="muteBtn" title="Mute (M)" aria-label="Mute">
+                          <svg class="icon-vol-on" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6h2.6L8 3.3v9.4L4.6 10H2V6z" fill="currentColor"/><path d="M10.5 5.5a3.3 3.3 0 010 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12.3 4a5.8 5.8 0 010 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity="0.6"/></svg>
+                          <svg class="icon-vol-off" width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:none"><path d="M2 6h2.6L8 3.3v9.4L4.6 10H2V6z" fill="currentColor"/><path d="M11 6l4 4M15 6l-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                        </button>
+                        <div class="vol-pop">
+                          <div class="vol-pill">
+                            <div class="vol-slider-wrap" id="volWrap">
+                              <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="100" step="1" aria-label="Volume" />
+                              <span class="vol-notch" id="volNotch"></span>
+                            </div>
+                            <span class="vol-readout mono" id="volReadout">100%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="popover-wrap" id="subtitleWrap">
+                        <button class="ctrl-btn" id="subtitleToggle" title="Subtitles (C)" aria-label="Subtitles">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M4.3 7.6h2.4M8.3 7.6h3.4M4.3 10.1h4.2M10 10.1h1.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                        </button>
+                        <div class="popover in-player sub-panel" id="subtitlePanel" role="dialog" aria-label="Subtitles">
+                          <div class="sub-head">
+                            <span class="sub-title">Subtitles</span>
+                            <div class="sub-head-tools">
+                              <button class="sub-gear" id="subMoreSettings" title="Subtitle style settings" aria-label="Subtitle style settings"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="4.5" r="1.7" stroke="currentColor" stroke-width="1.4"/><circle cx="6" cy="11.5" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg></button>
+                              <label class="switch" title="Show or hide subtitles (C)"><input type="checkbox" id="subEnabled" aria-label="Show subtitles" /><span class="switch-ui"></span></label>
+                            </div>
+                          </div>
+                          <div class="sub-tracks" id="subTracks" role="radiogroup" aria-label="Subtitle track"></div>
+                          <div class="sub-actions">
+                            <button class="btn" id="subAddFile"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 2v9M2 6.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Add file</button>
+                            <button class="btn" id="subSearchBtn"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.6" cy="5.6" r="3.5" stroke="currentColor" stroke-width="1.3"/><path d="M8.3 8.3l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Search online</button>
+                          </div>
+                          <div class="sub-sec" id="subSyncPane">
+                            <div class="sub-sec-head">
+                              <span>Timing</span>
+                              <span class="sync-readout"><b id="subOffsetValue" aria-live="polite">0.0s</b><button class="sub-link" id="subOffsetReset">Reset</button></span>
+                            </div>
+                            <div class="sync-ruler" id="subRuler" role="slider" tabindex="0" aria-label="Subtitle delay in seconds" aria-valuemin="-5" aria-valuemax="5" aria-valuenow="0" title="Drag to shift the subtitles. Double-click to reset.">
+                              <span class="sync-zero"></span>
+                              <i class="sync-fill" id="subRulerFill"></i>
+                              <i class="sync-grip" id="subRulerMark"></i>
+                            </div>
+                            <div class="sync-btns">
+                              <button id="subOffsetMinus5" aria-label="Earlier by 0.5 seconds">−0.5</button>
+                              <button id="subOffsetMinus" aria-label="Earlier by 0.1 seconds">−0.1</button>
+                              <button id="subOffsetPlus" aria-label="Later by 0.1 seconds">+0.1</button>
+                              <button id="subOffsetPlus5" aria-label="Later by 0.5 seconds">+0.5</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button class="ctrl-btn" id="fullscreenBtn" title="Fullscreen (F)" aria-label="Toggle fullscreen">
+                        <svg class="icon-fs-enter" width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 5.5v-3a1 1 0 011-1h3M13.5 5.5v-3a1 1 0 00-1-1h-3M1.5 9.5v3a1 1 0 001 1h3M13.5 9.5v3a1 1 0 01-1 1h-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg class="icon-fs-exit" width="15" height="15" viewBox="0 0 15 15" fill="none" style="display:none"><path d="M5.5 1.5v3a1 1 0 01-1 1h-3M9.5 1.5v3a1 1 0 001 1h3M5.5 13.5v-3a1 1 0 00-1-1h-3M9.5 13.5v-3a1 1 0 011-1h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+
+                      <div class="popover-wrap" id="moreWrap">
+                        <button class="ctrl-btn" id="moreBtn" title="More options" aria-label="More options">
+                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="3.2" cy="8" r="1.4" fill="currentColor"/><circle cx="8" cy="8" r="1.4" fill="currentColor"/><circle cx="12.8" cy="8" r="1.4" fill="currentColor"/></svg>
+                        </button>
+                        <div class="popover more-popover" id="morePopover">
+                          <button class="menu-row" id="audioTrackBtn">
+                            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.8 5.8h2l3.4-2.9v8.2L3.8 8.2h-2v-2.4z" fill="currentColor"/><path d="M10.3 5a2.6 2.6 0 010 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                            <span>Audio track</span>
+                            <span class="menu-state">›</span>
+                          </button>
+                          <button class="menu-row" id="fxOpenBtn">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6.4 2l1.1 3.1 3.1 1.1-3.1 1.1L6.4 10.4 5.3 7.3 2.2 6.2l3.1-1.1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 9.6v3.6M10.2 11.4h3.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                            <span>Video effects</span>
+                            <span class="menu-state" id="fxMenuState">Ready</span>
+                          </button>
+                          <div class="menu-row menu-static menu-zoom">
+                            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="6.3" cy="6.3" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M9.2 9.2l3.3 3.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                            <span>Zoom</span>
+                            <span class="menu-state mono" id="zoomValue">100%</span>
+                          </div>
+                          <input type="range" id="zoomSlider" class="zoom-slider" min="100" max="400" step="5" value="100" aria-label="Zoom level" />
+                          <button class="menu-row" id="zoomResetBtn">
+                            <span style="width:15px"></span>
+                            <span>Reset zoom &amp; pan</span>
+                          </button>
+                          <div class="menu-sep"></div>
+                          <button class="menu-row" id="statsToggle">
+                            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7.5 6.6v3.8M7.5 4.6v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                            <span>Video info</span>
+                            <span class="menu-state" id="statsState">Off</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div class="popover-wrap" id="audioTrackWrap">
+                        <div class="popover" id="audioTrackList"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="stats-overlay hidden" id="statsOverlay"></div>
+                <div class="video-corner-stack" id="videoCornerStack">
+                  <div class="toast-stack" id="toastStack"></div>
+                  <div class="autoplay-overlay hidden" id="autoplayOverlay">
+                    <div class="autoplay-card">
+                      <div class="autoplay-thumb" id="autoplayThumb"></div>
+                      <div class="autoplay-info">
+                        <div class="autoplay-label">Playing next</div>
+                        <div class="autoplay-title mono" id="autoplayTitle"></div>
+                      </div>
+                      <svg class="autoplay-ring" width="34" height="34" viewBox="0 0 34 34">
+                        <circle cx="17" cy="17" r="14" stroke-width="2.5" fill="none" class="autoplay-ring-track" />
+                        <circle cx="17" cy="17" r="14" stroke-width="2.5" fill="none" class="autoplay-ring-fill" id="autoplayRing" />
+                      </svg>
+                      <button class="btn" id="autoplayCancel">Cancel</button>
+                    </div>
                   </div>
                 </div>
               </div>
-              <aside class="playlist-panel">
-                <div class="panel-title">Playlist</div>
+
+              <div class="splitter" id="splitter" title="Drag to resize"></div>
+
+              <aside class="playlist-panel" id="playlistPanel">
+                <div class="panel-title">
+                  <span>Playlist <span class="playlist-count" id="playlistCount">0</span><span class="playlist-total mono" id="playlistTotal"></span></span>
+                  <div class="panel-title-actions">
+                    <button class="mini-icon-btn" id="playlistLibBtn" title="Add from Library" aria-label="Add from Library">
+                      <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M7.5 2.5v10M2.5 7.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    </button>
+                    <button class="mini-icon-btn" id="playlistSearchBtn" title="Search playlist" aria-label="Search playlist">
+                      <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="6.3" cy="6.3" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M9.2 9.2l3.3 3.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    </button>
+                    <button class="mini-icon-btn" id="playlistClearBtn" title="Clear playlist" aria-label="Clear playlist">
+                      <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M2.5 4h10M6 4V2.8c0-.3.2-.5.5-.5h2c.3 0 .5.2.5.5V4M4 4l.5 8c0 .3.3.5.5.5h5c.3 0 .5-.2.5-.5L11 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <button class="mini-icon-btn" id="playlistSelectBtn" title="Select multiple" aria-label="Select multiple">
+                      <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><rect x="2" y="2" width="11" height="11" rx="2.3" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 7.5l1.8 1.8L10.5 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="playlist-search-row hidden" id="playlistSearchRow">
+                  <input type="text" id="playlistSearch" class="ctrl full" placeholder="Filter playlist..." />
+                </div>
+                <div class="playlist-bulk-bar hidden" id="playlistBulkBar">
+                  <span class="mono" id="playlistBulkCount">0 selected</span>
+                  <button class="btn danger" id="playlistBulkDelete">Remove</button>
+                  <button class="mini-btn" id="playlistBulkCancel">Cancel</button>
+                </div>
                 <div id="playlistList" class="playlist"></div>
+                <div class="playlist-empty" id="playlistEmpty">
+                  <div class="playlist-empty-text">Your playlist is empty</div>
+                  <div class="playlist-empty-sub">Pick videos in the Library to play them here</div>
+                  <button class="btn" id="plOpenLib">Open Library</button>
+                </div>
               </aside>
             </div>
           </section>
 
+          <section class="page hidden" id="page-library">
+            <div class="lib" id="lib">
+              <aside class="lib-tree" id="libTree"></aside>
+              <div class="lib-main">
+                <div class="lib-toolbar">
+                  <div class="lib-search">
+                    <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="6.3" cy="6.3" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M9.2 9.2l3.3 3.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                    <input type="text" id="libSearch" placeholder="Search library" autocomplete="off" />
+                    <button class="mini-icon-btn hidden" id="libSearchClear" aria-label="Clear search">✕</button>
+                  </div>
+                  <div class="lib-seg" id="libFilters">
+                    <button data-filter="all" class="active">All</button>
+                    <button data-filter="fav">Favorites</button>
+                    <button data-filter="progress">In progress</button>
+                    <button data-filter="new">Unwatched</button>
+                  </div>
+                  <select id="libSort" class="ctrl" aria-label="Sort library">
+                    <option value="order" data-icon="list">Playlist order</option>
+                    <option value="name" data-icon="az">Name A–Z</option>
+                    <option value="nameDesc" data-icon="za">Name Z–A</option>
+                    <option value="duration" data-icon="clock">Longest first</option>
+                    <option value="recent" data-icon="history">Recently played</option>
+                  </select>
+                  <div class="lib-seg lib-seg-icons" id="libViewSeg">
+                    <button data-view="grid" title="Grid" class="active"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1.5" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="8" y="8" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/></svg></button>
+                    <button data-view="list" title="List"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 3.5h10M2 7h10M2 10.5h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></button>
+                  </div>
+                  <input type="range" id="libSize" min="150" max="340" step="10" value="220" title="Card size" />
+                  <button class="btn" id="libSelectBtn">Select</button>
+                  <div class="popover-wrap" id="libAddWrap">
+                    <button class="btn primary" id="libAddBtn">Add</button>
+                    <div class="popover lib-add-pop" id="libAddPop">
+                      <button class="menu-row" id="libAddFiles"><span>Video files…</span></button>
+                      <button class="menu-row" id="libAddFolder"><span>Folder…</span></button>
+                      <button class="menu-row" id="libAddUrl"><span>Stream URL…</span></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="lib-selbar hidden" id="libBulk">
+                  <button class="lib-selbar-x" id="libBulkDone" title="Exit selection (Esc)" aria-label="Exit selection">✕</button>
+                  <span class="lib-selbar-count" id="libBulkCount">0 selected</span>
+                  <button class="btn" id="libBulkAll" title="Ctrl+A">Select all</button>
+                  <button class="btn" id="libBulkClear">Clear</button>
+                  <span class="lib-selbar-sep"></span>
+                  <button class="btn" id="libBulkPlay">Play</button>
+                  <button class="btn" id="libBulkQueue">Add to playlist</button>
+                  <button class="btn" id="libBulkFav">Favorite</button>
+                  <button class="btn danger" id="libBulkRemove">Remove</button>
+                </div>
+                <div class="lib-head" id="libHead"></div>
+                <div class="lib-scroll" id="libScroll">
+                  <div id="libContent"></div>
+                  <div id="libSentinel" class="lib-sentinel"></div>
+                  <div class="lib-empty hidden" id="libEmpty"></div>
+                </div>
+                
+              </div>
+            </div>
+          </section>
+
+          <section class="page hidden" id="page-recent">
+            <div class="recent-wrap">
+              <div class="recent-header">
+                <h2 class="section-title">Recently played</h2>
+                <button class="btn" id="clearRecentBtn">Clear history</button>
+              </div>
+              <div id="recentList" class="recent-list"></div>
+              <div class="empty-sub" id="recentEmpty">Nothing played yet.</div>
+            </div>
+          </section>
+
           <section class="page hidden" id="page-settings">
+            <div class="settings-top">
+              <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="Settings sections">
+                <button class="settings-tab active" data-tab="general" role="tab" aria-selected="true">General</button>
+                <button class="settings-tab" data-tab="subtitles" role="tab" aria-selected="false">Subtitles</button>
+                <button class="settings-tab" data-tab="audio" role="tab" aria-selected="false">Audio</button>
+                <button class="settings-tab" data-tab="effects" role="tab" aria-selected="false">Video effects</button>
+                <button class="settings-tab" data-tab="appearance" role="tab" aria-selected="false">Appearance</button>
+              </div>
+            </div>
+
             <div class="settings-grid">
-              <section class="section">
-                <h2 class="section-title">Subtitle Appearance</h2>
-                <div class="form-grid">
-                  <div class="row-label">Font Family</div>
-                  <div class="control">
-                    <select id="subtitleFontFamily" class="ctrl full">
-                      <option value="Arial">Arial</option>
-                      <option value="Helvetica">Helvetica</option>
-                      <option value="Verdana">Verdana</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Courier New">Courier New</option>
-                      <option value="Georgia">Georgia</option>
-                      <option value="Tahoma">Tahoma</option>
-                    </select>
+              <!-- ================= General ================= -->
+              <section class="settings-panel sset" data-panel="general">
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Playback</h3></div>
+                  <div class="sset-row"><span class="sset-label"><b>Video fit</b><small>Fit shows the whole picture. Fill crops the edges to remove black bars.</small></span>
+                    <div class="sset-ctl"><div class="lib-seg sset-seg" id="fitSegmented"><button data-fit="contain">Fit</button><button data-fit="cover">Fill</button></div></div></div>
+                  <div class="sset-group">
+                    <div class="sset-row sset-toggle"><span class="sset-label"><b>Play next automatically</b><small>Start the next item in the playlist when a video ends.</small></span><label class="switch"><input type="checkbox" id="autoplayEnabled" class="gate" checked /><span class="switch-ui"></span></label></div>
+                    <div class="sset-row gated"><span class="sset-label"><b>Countdown</b><small>How long to wait before the next video starts.</small></span><div class="sset-ctl"><input type="range" class="rng" id="autoplayDelay" min="2" max="15" step="1" value="5" aria-label="Seconds before the next video starts" /><output class="val mono" id="autoplayDelayValue">5s</output></div></div>
                   </div>
+                  <div class="sset-row sset-toggle"><span class="sset-label"><b>Window layout</b><small>Puts the sidebar, playlist and video back to their default sizes.</small></span><button class="btn" id="resetLayoutBtn">Restore layout</button></div>
+                </div>
 
-                  <div class="row-label">Font Weight</div>
-                  <div class="control">
-                    <select id="subtitleFontWeight" class="ctrl">
-                      <option value="100">Thin</option>
-                      <option value="200">Extra Light</option>
-                      <option value="300">Light</option>
-                      <option value="400">Regular</option>
-                      <option value="500">Medium</option>
-                      <option value="600">Semi Bold</option>
-                      <option value="700">Bold</option>
-                      <option value="800">Extra Bold</option>
-                      <option value="900">Black</option>
-                    </select>
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Library and storage</h3></div>
+                  <div class="sset-row"><span class="sset-label"><b>Default import folder</b><small>The folder that opens first when you import videos.</small></span>
+                    <div class="sset-ctl"><span class="mono path-text" id="defaultFolderText">Not set</span><button class="btn" id="chooseDefaultFolderBtn">Choose…</button><button class="btn" id="clearDefaultFolderBtn">Clear</button></div></div>
+                  <div class="sset-row sset-toggle"><span class="sset-label"><b>Conversion cache</b><small>Temporary files made when a video must be converted to play.</small><small class="mono" id="cacheInfoText">Calculating…</small></span><button class="btn" id="clearCacheBtn">Clear cache</button></div>
+                </div>
+
+                <div class="sset-card" id="sysCard">
+                  <div class="sset-head"><h3>System</h3><p>Everything here is on by default. Turn off what you don’t want.</p></div>
+                  <div class="sset-row sset-toggle"><span class="sset-label"><b>Hardware decoding</b><small>Uses your GPU to decode video. Takes effect after a restart.</small></span><label class="switch"><input type="checkbox" id="hwDecodeToggle" checked /><span class="switch-ui"></span></label></div>
+                  <div class="sset-row sset-toggle win-only"><span class="sset-label"><b>Show in “Open with”</b><small>Lists the player for MP4, MKV, WebM, MOV, AVI and M4V.</small></span><label class="switch"><input type="checkbox" id="sysOpenWith" /><span class="switch-ui"></span></label></div>
+                  <div class="sset-row sset-toggle win-only"><span class="sset-label"><b>Right-click menu for videos</b><small>Adds “Play with RTX Video Player” to video files.</small></span><label class="switch"><input type="checkbox" id="sysFileMenu" /><span class="switch-ui"></span></label></div>
+                  <div class="sset-row sset-toggle win-only"><span class="sset-label"><b>Right-click menu for folders</b><small>Adds “Open folder in RTX Video Player”, which imports every sub-folder too.</small></span><label class="switch"><input type="checkbox" id="sysFolderMenu" /><span class="switch-ui"></span></label></div>
+                  <div class="sset-row sset-toggle win-only"><span class="sset-label"><b>Default video player</b><small>Windows only lets you choose this yourself. Pick RTX Video Player for the video types you want.</small></span><button class="btn" id="sysDefaultApps">Open Default apps</button></div>
+                </div>
+
+                <details class="sset-card sset-details" id="shortcutsDetails">
+                  <summary><span class="sset-head"><h3>Keyboard and mouse</h3><p>Press <kbd>?</kbd> anywhere to see this list in a window.</p></span><span class="sset-chev" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5l4 4 4-4"/></svg></span></summary>
+                  <div class="shortcuts-grid shortcuts-inline" id="shortcutsInline"></div>
+                </details>
+
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Reset</h3></div>
+                  <div class="sset-row sset-toggle"><span class="sset-label"><b>Reset all settings</b><small>Every preference goes back to its default. Your library, playlist, favorites and files are kept.</small></span><button class="btn danger" id="resetAllBtn">Reset settings</button></div>
+                </div>
+              </section>
+
+              <!-- ================= Subtitles ================= -->
+              <section class="settings-panel sset hidden" data-panel="subtitles">
+                <div class="sset-preview">
+                  <div class="sset-stage" id="subPreviewStage" data-bg="night">
+                    <i class="sset-guide" id="subGuide" data-px="40px"></i>
+                    <div class="subtitle-preview" id="subtitlePreview" data-scale="0.6"><span>The quick brown fox jumps over the lazy dog</span><span dir="rtl">نمونه‌ی زیرنویس فارسی برای پیش‌نمایش</span></div>
                   </div>
-
-                  <div class="row-label">Font Size</div>
-                  <div class="control">
-                    <input type="range" id="subtitleFontSize" class="ctrl" min="12" max="96" step="2" value="24" />
-                    <span id="subtitleFontSizeValue">24px</span>
+                  <div class="sset-bar">
+                    <div class="sset-bar-left"><span class="sset-bar-label">Preview on</span>
+                      <div class="lib-seg" id="subBackdropSeg"><button data-bg="night">Dark</button><button data-bg="scene">Scene</button><button data-bg="day">Bright</button></div>
+                    </div>
+                    <button class="btn sset-reset" id="subStyleReset" title="Restore the default subtitle style">Reset style</button>
                   </div>
+                </div>
 
-                  <div class="row-label">Font Color</div>
-                  <div class="control">
-                    <input type="color" id="subtitleColor" class="ctrl color" value="#ffffff" />
-                  </div>
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Presets</h3><p>Start from a look, then fine-tune below.</p></div>
+                  <div class="sset-presets" id="subPresets"></div>
+                </div>
 
-                  <div class="row-label">Background Color</div>
-                  <div class="control">
-                    <input type="color" id="subtitleBgColor" class="ctrl color" value="#000000" />
-                    <label class="toggle">
-                      <input type="checkbox" id="subtitleBgEnabled" />
-                      <span>Enable</span>
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Text</h3></div>
+                  <div class="sset-row"><span class="sset-label">Font</span><div class="sset-ctl"><select id="subtitleFontFamily" class="ctrl full" data-dd="font" aria-label="Subtitle font"></select></div></div>
+                  <div class="sset-row"><span class="sset-label">Size</span><div class="sset-ctl"><input type="range" class="rng" id="subtitleFontSize" min="14" max="80" step="1" value="24" aria-label="Subtitle size" /><output class="val" id="subtitleFontSizeValue">24px</output></div></div>
+                  <div class="sset-row"><span class="sset-label">Weight</span><div class="sset-ctl"><div class="lib-seg sset-seg" id="subWeightSeg"><button data-w="400">Regular</button><button data-w="500">Medium</button><button data-w="600">Semibold</button><button data-w="700">Bold</button></div></div></div>
+                  <div class="sset-row"><span class="sset-label">Line spacing</span><div class="sset-ctl"><input type="range" class="rng" id="subtitleLine" min="1" max="2" step="0.05" value="1.3" aria-label="Line spacing" /><output class="val" id="subtitleLineValue">1.3</output></div></div>
+                  <div class="sset-row"><span class="sset-label">Color</span><div class="sset-ctl"><div class="sub-swatches" data-key="color"><button type="button" data-c="#ffffff" style="background:#ffffff" title="White" aria-label="White"></button><button type="button" data-c="#F3F2DE" style="background:#F3F2DE" title="Cream" aria-label="Cream"></button><button type="button" data-c="#FFE45C" style="background:#FFE45C" title="Yellow" aria-label="Yellow"></button><button type="button" data-c="#cfcfcf" style="background:#cfcfcf" title="Gray" aria-label="Gray"></button><button type="button" data-c="#7DE3FF" style="background:#7DE3FF" title="Cyan" aria-label="Cyan"></button><button type="button" data-c="#9BFF8A" style="background:#9BFF8A" title="Mint" aria-label="Mint"></button><button type="button" class="sub-swatch-custom" title="Custom color" aria-label="Custom color" aria-expanded="false"><span class="plus"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1.5v7M1.5 5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span></button></div></div></div>
+                </div>
+
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Edge and background</h3><p>Keeps text readable on bright scenes.</p></div>
+                  <div class="sset-row"><span class="sset-label">Style</span><div class="sset-ctl"><div class="lib-seg sset-seg" id="subEdgeSeg"><button data-edge="none">None</button><button data-edge="outline">Outline</button><button data-edge="shadow">Shadow</button><button data-edge="box">Box</button></div></div></div>
+                  <div class="sset-row" data-needs="outline"><span class="sset-label">Outline width</span><div class="sset-ctl"><input type="range" class="rng" id="subStrokeW" min="0.5" max="4" step="0.5" value="1.5" aria-label="Outline width" /><output class="val" id="subStrokeWValue">1.5px</output></div></div>
+                  <div class="sset-row" data-needs="outline"><span class="sset-label">Outline color</span><div class="sset-ctl"><div class="sub-swatches" data-key="strokeColor"><button type="button" data-c="#000000" style="background:#000000" title="Black" aria-label="Black"></button><button type="button" data-c="#2a2a2a" style="background:#2a2a2a" title="Charcoal" aria-label="Charcoal"></button><button type="button" data-c="#0b1a33" style="background:#0b1a33" title="Navy" aria-label="Navy"></button><button type="button" data-c="#2b1a0a" style="background:#2b1a0a" title="Brown" aria-label="Brown"></button><button type="button" data-c="#ffffff" style="background:#ffffff" title="White" aria-label="White"></button><button type="button" class="sub-swatch-custom" title="Custom color" aria-label="Custom color" aria-expanded="false"><span class="plus"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1.5v7M1.5 5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span></button></div></div></div>
+                  <div class="sset-row" data-needs="box"><span class="sset-label">Box color</span><div class="sset-ctl"><div class="sub-swatches" data-key="bgColor"><button type="button" data-c="#000000" style="background:#000000" title="Black" aria-label="Black"></button><button type="button" data-c="#2a2a2a" style="background:#2a2a2a" title="Charcoal" aria-label="Charcoal"></button><button type="button" data-c="#0b1a33" style="background:#0b1a33" title="Navy" aria-label="Navy"></button><button type="button" data-c="#ffffff" style="background:#ffffff" title="White" aria-label="White"></button><button type="button" class="sub-swatch-custom" title="Custom color" aria-label="Custom color" aria-expanded="false"><span class="plus"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1.5v7M1.5 5h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span></button></div></div></div>
+                  <div class="sset-row" data-needs="box"><span class="sset-label">Box opacity</span><div class="sset-ctl"><input type="range" class="rng" id="subtitleBgOpacity" min="10" max="100" step="1" value="60" aria-label="Box opacity" /><output class="val" id="subtitleBgOpacityValue">60%</output></div></div>
+                </div>
+
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Position</h3></div>
+                  <div class="sset-row"><span class="sset-label"><b>Distance from bottom</b><small>Measured from the bottom edge of the picture.</small></span><div class="sset-ctl"><input type="range" class="rng" id="subtitlePos" min="0" max="160" step="2" value="40" aria-label="Distance from the bottom edge in pixels" /><output class="val" id="subtitlePosValue">40px</output></div></div>
+                  <div class="sset-row sset-toggle"><span class="sset-label"><b>Keep above controls</b><small>Raise subtitles only as much as needed to clear the player controls.</small></span><label class="switch"><input type="checkbox" id="subLift" checked /><span class="switch-ui"></span></label></div>
+                </div>
+
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Files and language</h3></div>
+                  <div class="sset-row sset-toggle"><span class="sset-label"><b>Auto-load</b><small>Use subtitle files that sit next to the video.</small></span><label class="switch"><input type="checkbox" id="autoLoadSubs" checked /><span class="switch-ui"></span></label></div>
+                  <div class="sset-row sset-toggle"><span class="sset-label"><b>Remember choice</b><small>Reselect the last subtitle and its delay for each video.</small></span><label class="switch"><input type="checkbox" id="rememberSubtitle" checked /><span class="switch-ui"></span></label></div>
+                  <div class="sset-row"><span class="sset-label"><b>Search language</b><small>Default for online subtitle search.</small></span><div class="sset-ctl"><select id="defaultSubLang" class="ctrl full" data-dd="lang" aria-label="Default search language"></select></div></div>
+                </div>
+              </section>
+
+              <!-- ================= Audio ================= -->
+              <section class="settings-panel sset aud hidden" data-panel="audio">
+                <!-- ===== Equalizer console ===== -->
+                <div class="eq-card eqx" id="eqCard">
+                  <div class="eqx-head">
+                    <div class="eqx-title">
+                      <span class="eqx-logo" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 3v14M10 3v14M15 3v14"/><circle cx="5" cy="12" r="1.9" fill="currentColor"/><circle cx="10" cy="7" r="1.9" fill="currentColor"/><circle cx="15" cy="13" r="1.9" fill="currentColor"/></svg></span>
+                      <div class="eqx-title-txt"><b>Equalizer</b><small>10 bands · drag the curve or use the faders</small></div>
+                    </div>
+                    <label class="eqx-power" title="Enable equalizer">
+                      <input type="checkbox" id="eqEnabled" aria-label="Enable equalizer" />
+                      <span class="eqx-power-ui"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M10 2.5v7"/><path d="M5.2 5.6a6.2 6.2 0 1 0 9.6 0"/></svg></span>
                     </label>
-                    <input type="range" id="subtitleBgOpacity" class="ctrl" min="0" max="100" step="1" value="50" />
-                    <span id="subtitleBgOpacityValue">50%</span>
                   </div>
-
-                  <div class="row-label">Text Stroke</div>
-                  <div class="control">
-                    <input type="range" id="subtitleStrokeWidth" class="ctrl" min="0" max="4" step="0.5" value="1" />
-                    <span id="subtitleStrokeWidthValue">1px</span>
-                    <input type="color" id="subtitleStrokeColor" class="ctrl color" value="#000000" />
+                  <div class="eqx-toolbar">
+                    <select id="eqPresetSelect" class="ctrl" aria-label="Equalizer preset"></select>
+                    <div class="eqx-tools">
+                      <button class="btn" id="eqSaveBtn">Save as…</button>
+                      <button class="btn" id="eqDeleteBtn">Delete</button>
+                      <button class="btn" id="eqResetBtn">Reset</button>
+                    </div>
                   </div>
+                  <div class="eqx-graph" id="eqGraph">
+                    <canvas id="eqCanvas"></canvas>
+                    <div class="eqx-tip" id="eqTip"></div>
+                  </div>
+                  <div class="eqx-board">
+                    <div class="eqx-strip eqx-pre">
+                      <span class="eqx-db mono" id="eqPreampValue">0 dB</span>
+                      <div class="eqx-fader" id="eqPreampFader"><span class="eqx-rail"></span><span class="eqx-fill"></span><input type="range" id="eqPreamp" min="-12" max="12" step="0.5" value="0" aria-label="Preamp" /></div>
+                      <span class="eqx-hz">Pre</span>
+                    </div>
+                    <div class="eqx-strip eqx-meter-strip">
+                      <span class="eqx-db">&nbsp;</span>
+                      <canvas id="eqMeter"></canvas>
+                      <span class="eqx-hz">L · R</span>
+                    </div>
+                    <div class="eqx-bands" id="eqBands"></div>
+                  </div>
+                </div>
 
-                  <div class="row-label">Preview</div>
-                  <div class="subtitle-preview" id="subtitlePreview">Sample subtitle text</div>
+                <div class="sset-card" id="volCard">
+                  <div class="sset-head"><h3>Volume</h3><p>Boost quiet videos and even out loud scenes.</p></div>
+                  <div class="sset-group" id="boostCard">
+                    <div class="sset-row sset-toggle"><span class="sset-label"><b>Boost above 100%</b><small>Amplifies quiet videos. A limiter prevents clipping, but very high levels can still distort the sound or damage speakers and hearing.</small></span><label class="switch"><input type="checkbox" id="boostToggle" class="gate" /><span class="switch-ui"></span></label></div>
+                    <div class="sset-row gated"><span class="sset-label"><b>Maximum level</b></span><div class="sset-ctl"><div class="lib-seg sset-seg" id="boostMaxSeg"><button data-max="150">150%</button><button data-max="200" class="active">200%</button><button data-max="300">300%</button><button data-max="400">400%</button></div></div></div>
+                    <div class="sset-row gated"><span class="sset-label"><b>Current volume</b></span><div class="sset-ctl"><output class="val mono" id="boostCurrent">100%</output></div></div>
+                  </div>
+                  <div class="sset-group" id="nightCard">
+                    <div class="sset-row sset-toggle"><span class="sset-label"><b>Night mode</b><small>Evens out loud and quiet parts so dialogue stays clear at low volume.</small></span><label class="switch"><input type="checkbox" id="nightModeToggle" class="gate" /><span class="switch-ui"></span></label></div>
+                    <div class="sset-row gated"><span class="sset-label"><b>Strength</b></span><div class="sset-ctl"><input type="range" class="rng" id="nightStrength" min="0" max="100" step="1" value="60" aria-label="Night mode strength" /><output class="val mono" id="nightStrengthValue">60%</output></div></div>
+                  </div>
+                </div>
+
+                <div class="adv" id="audAdv">
+                  <button type="button" class="adv-head" id="audAdvToggle" aria-expanded="false" aria-controls="audAdvBody">
+                    <span class="adv-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 6h9M16 6h1M3 14h2M9 14h8"/><circle cx="14" cy="6" r="2"/><circle cx="7" cy="14" r="2"/></svg></span>
+                    <span class="adv-txt"><b>More audio options</b><small>Stereo, reverb, compressor, filters, output and sync</small></span>
+                    <span class="adv-chev" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5l4 4 4-4"/></svg></span>
+                  </button>
+                  <div class="adv-body" id="audAdvBody">
+                    <div class="adv-inner"><div class="adv-pad">
+                      <div class="sset-card">
+                        <div class="sset-head sset-head-row"><div><h3>Stereo &amp; space</h3><p>Channel routing, width, balance and headphone comfort.</p></div></div>
+                        <div class="sset-row"><div class="sset-label"><b>Channel mode</b><small>Karaoke removes centre-panned vocals.</small></div>
+                          <div class="sset-ctl"><div class="lib-seg sset-seg" id="aMode"><button data-mode="stereo">Stereo</button><button data-mode="mono">Mono</button><button data-mode="left">Left</button><button data-mode="right">Right</button><button data-mode="swap">Swap</button><button data-mode="karaoke">Karaoke</button></div></div></div>
+                        <div class="sset-row" id="aWidthRow"><div class="sset-label"><b>Stereo width</b><small>0% is mono, 200% is extra wide.</small></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aWidth" min="0" max="200" step="1" /><span class="val mono" id="aWidthV"></span></div></div>
+                        <div class="sset-row"><div class="sset-label"><b>Balance</b><small>Double-click to centre.</small></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aBal" min="-100" max="100" step="1" /><span class="val mono" id="aBalV"></span></div></div>
+                        <div class="sset-row"><div class="sset-label"><b>Headphone crossfeed</b><small>Blends the channels slightly for a more natural image.</small></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aXf" min="0" max="100" step="1" /><span class="val mono" id="aXfV"></span></div></div>
+                      </div>
+                      <div class="sset-card">
+                        <div class="sset-head sset-head-row"><div><h3>Reverb</h3><p>Adds room ambience on top of the sound.</p></div><label class="switch"><input type="checkbox" id="aRevOn" aria-label="Enable reverb" /><span class="switch-ui"></span></label></div>
+                        <div class="sset-row" data-dep="rev"><div class="sset-label"><b>Room size</b></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aRevSize" min="0.3" max="4" step="0.1" /><span class="val mono" id="aRevSizeV"></span></div></div>
+                        <div class="sset-row" data-dep="rev"><div class="sset-label"><b>Mix</b></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aRevMix" min="0" max="100" step="1" /><span class="val mono" id="aRevMixV"></span></div></div>
+                      </div>
+                      <div class="sset-card">
+                        <div class="sset-head sset-head-row"><div><h3>Compressor</h3><p>Manual dynamics control, independent of Night mode.</p></div><label class="switch"><input type="checkbox" id="aCompOn" aria-label="Enable compressor" /><span class="switch-ui"></span></label></div>
+                        <div class="sset-row" data-dep="comp"><div class="sset-label"><b>Threshold</b></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aCompThr" min="-60" max="0" step="1" /><span class="val mono" id="aCompThrV"></span></div></div>
+                        <div class="sset-row" data-dep="comp"><div class="sset-label"><b>Ratio</b></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aCompRatio" min="1" max="20" step="0.5" /><span class="val mono" id="aCompRatioV"></span></div></div>
+                        <div class="sset-row" data-dep="comp"><div class="sset-label"><b>Attack</b></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aCompAtk" min="0" max="200" step="1" /><span class="val mono" id="aCompAtkV"></span></div></div>
+                        <div class="sset-row" data-dep="comp"><div class="sset-label"><b>Release</b></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aCompRel" min="10" max="1000" step="10" /><span class="val mono" id="aCompRelV"></span></div></div>
+                        <div class="sset-row" data-dep="comp"><div class="sset-label"><b>Makeup gain</b></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aCompGain" min="0" max="18" step="0.5" /><span class="val mono" id="aCompGainV"></span></div></div>
+                      </div>
+                      <div class="sset-card">
+                        <div class="sset-head sset-head-row"><div><h3>Filters</h3><p>Cut rumble or hiss at the ends of the spectrum.</p></div></div>
+                        <div class="sset-row"><div class="sset-label"><b>Low cut</b><small>Removes deep rumble below this frequency.</small></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aHp" min="20" max="300" step="5" /><span class="val mono" id="aHpV"></span></div></div>
+                        <div class="sset-row"><div class="sset-label"><b>High cut</b><small>Softens hiss above this frequency.</small></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aLp" min="3000" max="20000" step="500" /><span class="val mono" id="aLpV"></span></div></div>
+                      </div>
+                      <div class="sset-card">
+                        <div class="sset-head sset-head-row"><div><h3>Output &amp; sync</h3><p>Playback device, timing and protection.</p></div></div>
+                        <div class="sset-row" id="aDevRow"><div class="sset-label"><b>Output device</b><small>Where the sound is played.</small></div>
+                          <div class="sset-ctl"><select id="aDevice" class="ctrl full" aria-label="Output device"></select></div></div>
+                        <div class="sset-row"><div class="sset-label"><b>Audio delay</b><small>Delays the sound if it plays ahead of the picture.</small></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aDelay" min="0" max="2000" step="10" /><span class="val mono" id="aDelayV"></span></div></div>
+                        <div class="sset-row sset-toggle"><div class="sset-label"><b>Keep pitch with speed</b><small>Avoids chipmunk voices when playing faster or slower.</small></div>
+                          <label class="switch"><input type="checkbox" id="aPitch" /><span class="switch-ui"></span></label></div>
+                        <div class="sset-row sset-toggle"><div class="sset-label"><b>Limiter</b><small>Stops peaks from clipping, recommended with volume boost.</small></div>
+                          <label class="switch"><input type="checkbox" id="aLimOn" /><span class="switch-ui"></span></label></div>
+                        <div class="sset-row" data-dep="lim"><div class="sset-label"><b>Limiter ceiling</b></div>
+                          <div class="sset-ctl"><input type="range" class="rng" id="aCeil" min="-6" max="-0.5" step="0.5" /><span class="val mono" id="aCeilV"></span></div></div>
+                      </div>
+
+                      <div class="adv-foot"><button class="btn" id="aReset">Reset audio options</button></div>
+                    </div></div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ================= Video effects (filled by effects.js) ================= -->
+              <section class="settings-panel sset hidden" data-panel="effects" id="fxPanel"></section>
+
+              <!-- ================= Appearance ================= -->
+              <section class="settings-panel sset hidden" data-panel="appearance">
+                <div class="sset-card">
+                  <div class="sset-head"><h3>Interface style</h3><p>Pick a look. It applies right away.</p></div>
+                  <div class="style-grid" id="styleGrid">
+                    <button class="style-card active" data-style="classic">
+                      <span class="sc-prev sc-classic"><i class="sb"></i><i class="p1"></i><i class="p2"></i></span>
+                      <span class="sc-name">Classic</span>
+                      <span class="sc-pal"><i style="background:#0b0c0e"></i><i style="background:#1f2125"></i><i style="background:var(--accent)"></i><i style="background:#f2f2f2"></i></span>
+                    </button>
+                    <button class="style-card" data-style="glass-dark">
+                      <span class="sc-prev sc-glass-dark"><i class="sb"></i><i class="p1"></i><i class="p2"></i></span>
+                      <span class="sc-name">Studio Black</span>
+                      <span class="sc-pal"><i style="background:#0a0a0b"></i><i style="background:#212122"></i><i style="background:#a3a3a3"></i><i style="background:#ffffff"></i></span>
+                    </button>
+                    <button class="style-card" data-style="glass-light">
+                      <span class="sc-prev sc-glass-light"><i class="sb"></i><i class="p1"></i><i class="p2"></i></span>
+                      <span class="sc-name">Studio White</span>
+                      <span class="sc-pal"><i style="background:#d8d8da"></i><i style="background:#fbfbfb"></i><i style="background:#5b5b5e"></i><i style="background:#0d0d0e"></i></span>
+                    </button>
+                    <button class="style-card" data-style="sand">
+                      <span class="sc-prev sc-sand"><i class="sb"></i><i class="p1"></i><i class="p2"></i></span>
+                      <span class="sc-name">Studio Sand</span>
+                      <span class="sc-pal"><i style="background:#181B18"></i><i style="background:#5A5440"></i><i style="background:#D9D4BD"></i><i style="background:#F3F2DE"></i></span>
+                    </button>
+                  </div>
+                  <div class="sset-row"><span class="sset-label"><b>Animation level</b><small>Rich adds blur and motion. Lite is lighter on weaker graphics cards.</small></span>
+                    <div class="sset-ctl"><div class="lib-seg sset-seg" id="fxSeg"><button data-fx="rich">Rich</button><button data-fx="lite">Lite</button></div></div></div>
+                  <div class="sset-row" id="accentRow"><span class="sset-label"><b>Accent color</b><small>Classic only. The other styles use fixed colors.</small></span>
+                    <div class="sset-ctl"><input type="range" id="accentHue" class="hue-bar" min="70" max="300" step="1" value="77" aria-label="Accent color" /><span class="accent-chip" id="accentChip"></span><button class="btn" id="accentReset" title="Back to default">Reset</button></div></div>
                 </div>
               </section>
             </div>
@@ -166,6 +685,136 @@
       </section>
     </div>
 
+    <div class="modal-overlay hidden" id="subSearchOverlay">
+      <div class="modal" id="subSearchModal" role="dialog" aria-label="Search subtitles">
+        <div class="modal-header">
+          <h3>Find subtitles</h3>
+          <div class="modal-header-actions">
+            <button class="icon-link-btn" id="subSearchKeyEdit" title="API key settings" aria-label="API key settings">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.3" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v1.7M8 12.3V14M14 8h-1.7M3.7 8H2M12.1 3.9l-1.2 1.2M5.1 10.9l-1.2 1.2M12.1 12.1l-1.2-1.2M5.1 5.1L3.9 3.9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            </button>
+            <button class="modal-close" id="subSearchClose" aria-label="Close">
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-body">
+          <div class="apikey-row hidden" id="subSearchApiKeyRow">
+            <div class="apikey-text">
+              <div class="apikey-title">OpenSubtitles API key</div>
+              <div class="apikey-sub">Needed once, free to create. <a href="#" id="subSearchApiKeyLink">Get a free key</a></div>
+            </div>
+            <input type="password" id="subSearchApiKeyInput" class="ctrl" placeholder="Paste your API key" autocomplete="off" />
+            <button class="btn primary" id="subSearchApiKeySave">Save</button>
+          </div>
+
+          <div class="search-row">
+            <input type="text" id="subSearchQuery" class="ctrl full" placeholder="Movie or episode title" />
+            <select id="subSearchLang" class="ctrl" data-dd="lang" aria-label="Subtitle language">
+              <option value="all">All languages</option>
+              <option value="fa">Persian</option>
+              <option value="en">English</option>
+              <option value="ar">Arabic</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="es">Spanish</option>
+              <option value="it">Italian</option>
+              <option value="ru">Russian</option>
+              <option value="tr">Turkish</option>
+              <option value="pt-BR">Portuguese (BR)</option>
+              <option value="pt-PT">Portuguese (PT)</option>
+              <option value="zh-CN">Chinese</option>
+              <option value="ja">Japanese</option>
+              <option value="ko">Korean</option>
+              <option value="hi">Hindi</option>
+            </select>
+            <button class="btn primary" id="subSearchGo">
+              <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="6.3" cy="6.3" r="4" stroke="currentColor" stroke-width="1.3"/><path d="M9.2 9.2l3.3 3.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              <span>Search</span>
+            </button>
+          </div>
+
+          <div id="subSearchStatus" class="sub-search-status hidden"></div>
+          <div id="subSearchResults" class="sub-search-results"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="shortcutsOverlay">
+      <div class="modal shortcuts-modal" role="dialog" aria-label="Keyboard shortcuts">
+        <div class="modal-header">
+          <h3>Keyboard &amp; mouse shortcuts</h3>
+          <div class="modal-header-actions">
+            <button class="modal-close" id="shortcutsClose" aria-label="Close">
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="shortcuts-grid" id="shortcutsGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="confirmOverlay">
+      <div class="modal boost-modal" role="alertdialog" aria-labelledby="confirmTitle" aria-describedby="confirmMsg">
+        <div class="boost-warn-icon"><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M5 7.5h16M10.5 7.5V5.2c0-.4.3-.7.7-.7h3.6c.4 0 .7.3.7.7v2.3M7.5 7.5l.8 12.2c0 .5.4.8.8.8h7.8c.4 0 .8-.3.8-.8l.8-12.2M11 11.5v5.5M15 11.5v5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3 id="confirmTitle">Are you sure?</h3>
+        <p id="confirmMsg"></p>
+        <div class="boost-modal-actions"><button class="btn" id="confirmCancel">Cancel</button><button class="btn solid" id="confirmOk">Remove</button></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="missingOverlay">
+      <div class="modal boost-modal" role="alertdialog" aria-label="File not found">
+        <div class="boost-warn-icon missing"><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M6 3.5h9l5 5V22a.5.5 0 01-.5.5h-13.5A.5.5 0 015.5 22V4a.5.5 0 01.5-.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10.2 12.5l5.6 5.6M15.8 12.5l-5.6 5.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h3>File not found</h3>
+        <p id="missingName" class="missing-name"></p>
+        <p>The video was moved, renamed or deleted. Remove it from your library?</p>
+        <div class="boost-modal-actions"><button class="btn" id="missingKeep">Keep</button><button class="btn danger" id="missingRemove">Remove from library</button></div>
+        <button class="missing-all" id="missingAll">Check the whole library and remove all missing files</button>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="boostOverlay">
+      <div class="modal boost-modal" role="alertdialog" aria-label="Enable volume boost">
+        <div class="boost-warn-icon"><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M13 3.5l10 17.5H3L13 3.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M13 10.5v5M13 18.2v.1" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></div>
+        <h3>Enable volume boost?</h3>
+        <p>Volume above 100% amplifies the audio digitally. It can cause distortion, damage speakers and headphones, and harm your hearing, especially if a loud scene follows a quiet one.</p>
+        <p class="boost-modal-tip">Start low: lower your system volume first, then raise the boost gradually.</p>
+        <div class="boost-modal-actions"><button class="btn" id="boostCancel">Cancel</button><button class="btn primary" id="boostConfirm">Enable boost</button></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="urlOverlay">
+      <div class="modal url-modal" role="dialog" aria-label="Add stream URL">
+        <div class="modal-header">
+          <h3>Add stream URL</h3>
+          <div class="modal-header-actions">
+            <button class="modal-close" id="urlClose" aria-label="Close">
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="search-row">
+            <input type="text" id="urlInput" class="ctrl full" placeholder="https://.../video.mp4" />
+            <button class="btn primary" id="urlAddBtn">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="paletteOverlay">
+      <div class="modal palette-modal" role="dialog" aria-label="Command palette">
+        <input type="text" id="paletteInput" class="palette-input" placeholder="Type a command..." autocomplete="off" />
+        <div class="palette-list" id="paletteList"></div>
+      </div>
+    </div>
+
+    <script src="fx-core.js"></script>
+    <script src="effects.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>
